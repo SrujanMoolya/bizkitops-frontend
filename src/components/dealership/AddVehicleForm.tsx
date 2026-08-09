@@ -41,6 +41,8 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
   const [images, setImages] = useState<string[]>(editVehicle?.images || []);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAddPhotoOption, setShowAddPhotoOption] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState("");
 
   const updateField = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -142,15 +144,40 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
     }
   };
 
-  const addDemoImage = () => {
-    const demoImages = [
-      "https://images.unsplash.com/photo-1619682817481-e994891cd1f5?w=800",
-      "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=800",
-      "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800",
-    ];
-    const nextImage = demoImages[images.length % demoImages.length];
-    setImages([...images, nextImage]);
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File is too large! Please upload an image under 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setImages((prev) => [...prev, dataUrl]);
+      setErrors((prev) => ({ ...prev, images: "" }));
+      setShowAddPhotoOption(false);
+      toast.success("Image uploaded successfully!");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddUrl = () => {
+    if (!photoUrl.trim()) {
+      toast.error("Please enter a valid image URL.");
+      return;
+    }
+    if (!photoUrl.startsWith("http://") && !photoUrl.startsWith("https://")) {
+      toast.error("URL must start with http:// or https://");
+      return;
+    }
+    setImages((prev) => [...prev, photoUrl.trim()]);
     setErrors((prev) => ({ ...prev, images: "" }));
+    setPhotoUrl("");
+    setShowAddPhotoOption(false);
+    toast.success("Image link added successfully!");
   };
 
   const removeImage = (index: number) => {
@@ -199,10 +226,10 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
                   </button>
                 </div>
               ))}
-              {images.length < 10 && (
+              {images.length < 10 && !showAddPhotoOption && (
                 <button
                   type="button"
-                  onClick={addDemoImage}
+                  onClick={() => setShowAddPhotoOption(true)}
                   className="h-24 w-32 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary hover:text-primary transition-colors"
                 >
                   <ImagePlus className="h-5 w-5" />
@@ -210,6 +237,46 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
                 </button>
               )}
             </div>
+
+            {showAddPhotoOption && (
+              <div className="p-4 mt-4 border border-border rounded-xl bg-slate-50/50 dark:bg-slate-900/50 max-w-lg space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-foreground">Add New Photo</h4>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowAddPhotoOption(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Upload File */}
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-semibold text-muted-foreground">Upload local image</Label>
+                    <label className="flex flex-col items-center justify-center border border-dashed border-border rounded-lg bg-background hover:bg-slate-100 cursor-pointer h-24 p-3 transition-colors">
+                      <ImagePlus className="h-6 w-6 text-muted-foreground mb-1" />
+                      <span className="text-[11px] text-muted-foreground text-center">Click to choose image (Max 2MB)</span>
+                      <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+                    </label>
+                  </div>
+
+                  {/* Add URL */}
+                  <div className="space-y-2 flex flex-col justify-between">
+                    <div>
+                      <Label className="text-[11px] font-semibold text-muted-foreground">Or paste image web link</Label>
+                      <input
+                        type="text"
+                        placeholder="https://example.com/car.jpg"
+                        value={photoUrl}
+                        onChange={(e) => setPhotoUrl(e.target.value)}
+                        className={`${inputClass} mt-1 h-9`}
+                      />
+                    </div>
+                    <Button type="button" onClick={handleAddUrl} className="w-full h-9 bg-primary text-primary-foreground text-xs mt-3">
+                      Add Link
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
