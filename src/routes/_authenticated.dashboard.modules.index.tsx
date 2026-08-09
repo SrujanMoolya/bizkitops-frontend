@@ -28,6 +28,7 @@ import {
   Sparkles,
   ChevronRight,
   RefreshCw,
+  Car,
   type LucideIcon,
 } from "lucide-react";
 
@@ -40,6 +41,7 @@ const ICONS: Record<string, LucideIcon> = {
   Globe,
   Shield,
   BarChart3,
+  Car,
 };
 
 const modulesOptions = queryOptions({
