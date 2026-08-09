@@ -29,6 +29,7 @@ import { Route as AuthenticatedDashboardAppointmentsIndexRouteImport } from './r
 import { Route as AuthenticatedDashboardBillingIndexRouteImport } from './routes/_authenticated.dashboard.billing.index'
 import { Route as AuthenticatedDashboardCrmIndexRouteImport } from './routes/_authenticated.dashboard.crm.index'
 import { Route as AuthenticatedDashboardCustomersIndexRouteImport } from './routes/_authenticated.dashboard.customers.index'
+import { Route as AuthenticatedDashboardDealershipIndexRouteImport } from './routes/_authenticated.dashboard.dealership.index'
 import { Route as AuthenticatedDashboardExpensesIndexRouteImport } from './routes/_authenticated.dashboard.expenses.index'
 import { Route as AuthenticatedDashboardInventoryIndexRouteImport } from './routes/_authenticated.dashboard.inventory.index'
 import { Route as AuthenticatedDashboardInvoicesIndexRouteImport } from './routes/_authenticated.dashboard.invoices.index'
@@ -145,6 +146,12 @@ const AuthenticatedDashboardCustomersIndexRoute =
     path: '/customers/',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardDealershipIndexRoute =
+  AuthenticatedDashboardDealershipIndexRouteImport.update({
+    id: '/dealership/',
+    path: '/dealership/',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardExpensesIndexRoute =
   AuthenticatedDashboardExpensesIndexRouteImport.update({
     id: '/expenses/',
@@ -227,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/billing/': typeof AuthenticatedDashboardBillingIndexRoute
   '/dashboard/crm/': typeof AuthenticatedDashboardCrmIndexRoute
   '/dashboard/customers/': typeof AuthenticatedDashboardCustomersIndexRoute
+  '/dashboard/dealership/': typeof AuthenticatedDashboardDealershipIndexRoute
   '/dashboard/expenses/': typeof AuthenticatedDashboardExpensesIndexRoute
   '/dashboard/inventory/': typeof AuthenticatedDashboardInventoryIndexRoute
   '/dashboard/invoices/': typeof AuthenticatedDashboardInvoicesIndexRoute
@@ -257,6 +265,7 @@ export interface FileRoutesByTo {
   '/dashboard/billing': typeof AuthenticatedDashboardBillingIndexRoute
   '/dashboard/crm': typeof AuthenticatedDashboardCrmIndexRoute
   '/dashboard/customers': typeof AuthenticatedDashboardCustomersIndexRoute
+  '/dashboard/dealership': typeof AuthenticatedDashboardDealershipIndexRoute
   '/dashboard/expenses': typeof AuthenticatedDashboardExpensesIndexRoute
   '/dashboard/inventory': typeof AuthenticatedDashboardInventoryIndexRoute
   '/dashboard/invoices': typeof AuthenticatedDashboardInvoicesIndexRoute
@@ -290,6 +299,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard/billing/': typeof AuthenticatedDashboardBillingIndexRoute
   '/_authenticated/dashboard/crm/': typeof AuthenticatedDashboardCrmIndexRoute
   '/_authenticated/dashboard/customers/': typeof AuthenticatedDashboardCustomersIndexRoute
+  '/_authenticated/dashboard/dealership/': typeof AuthenticatedDashboardDealershipIndexRoute
   '/_authenticated/dashboard/expenses/': typeof AuthenticatedDashboardExpensesIndexRoute
   '/_authenticated/dashboard/inventory/': typeof AuthenticatedDashboardInventoryIndexRoute
   '/_authenticated/dashboard/invoices/': typeof AuthenticatedDashboardInvoicesIndexRoute
@@ -323,6 +333,7 @@ export interface FileRouteTypes {
     | '/dashboard/billing/'
     | '/dashboard/crm/'
     | '/dashboard/customers/'
+    | '/dashboard/dealership/'
     | '/dashboard/expenses/'
     | '/dashboard/inventory/'
     | '/dashboard/invoices/'
@@ -353,6 +364,7 @@ export interface FileRouteTypes {
     | '/dashboard/billing'
     | '/dashboard/crm'
     | '/dashboard/customers'
+    | '/dashboard/dealership'
     | '/dashboard/expenses'
     | '/dashboard/inventory'
     | '/dashboard/invoices'
@@ -385,6 +397,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard/billing/'
     | '/_authenticated/dashboard/crm/'
     | '/_authenticated/dashboard/customers/'
+    | '/_authenticated/dashboard/dealership/'
     | '/_authenticated/dashboard/expenses/'
     | '/_authenticated/dashboard/inventory/'
     | '/_authenticated/dashboard/invoices/'
@@ -553,6 +566,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardCustomersIndexRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/dealership/': {
+      id: '/_authenticated/dashboard/dealership/'
+      path: '/dealership'
+      fullPath: '/dashboard/dealership/'
+      preLoaderRoute: typeof AuthenticatedDashboardDealershipIndexRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/expenses/': {
       id: '/_authenticated/dashboard/expenses/'
       path: '/expenses'
@@ -634,6 +654,7 @@ interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardBillingIndexRoute: typeof AuthenticatedDashboardBillingIndexRoute
   AuthenticatedDashboardCrmIndexRoute: typeof AuthenticatedDashboardCrmIndexRoute
   AuthenticatedDashboardCustomersIndexRoute: typeof AuthenticatedDashboardCustomersIndexRoute
+  AuthenticatedDashboardDealershipIndexRoute: typeof AuthenticatedDashboardDealershipIndexRoute
   AuthenticatedDashboardExpensesIndexRoute: typeof AuthenticatedDashboardExpensesIndexRoute
   AuthenticatedDashboardInventoryIndexRoute: typeof AuthenticatedDashboardInventoryIndexRoute
   AuthenticatedDashboardInvoicesIndexRoute: typeof AuthenticatedDashboardInvoicesIndexRoute
@@ -659,6 +680,8 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
     AuthenticatedDashboardCrmIndexRoute: AuthenticatedDashboardCrmIndexRoute,
     AuthenticatedDashboardCustomersIndexRoute:
       AuthenticatedDashboardCustomersIndexRoute,
+    AuthenticatedDashboardDealershipIndexRoute:
+      AuthenticatedDashboardDealershipIndexRoute,
     AuthenticatedDashboardExpensesIndexRoute:
       AuthenticatedDashboardExpensesIndexRoute,
     AuthenticatedDashboardInventoryIndexRoute:

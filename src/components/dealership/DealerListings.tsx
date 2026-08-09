@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Car, Edit, Trash2, Eye, Zap, ImagePlus, Plus, Search,
   CheckCircle2, MoreVertical,
@@ -111,14 +110,9 @@ export function DealerListings({ dealerId, onAddVehicle, onEditVehicle }: Dealer
         <div className="py-20 text-center text-muted-foreground">Loading inventory...</div>
       ) : (
         <div className="space-y-3">
-        <AnimatePresence>
           {filtered.map((v, i) => (
-            <motion.div
+            <div
               key={v.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ delay: i * 0.03 }}
             >
               <Card className="border-border hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
@@ -191,9 +185,8 @@ export function DealerListings({ dealerId, onAddVehicle, onEditVehicle }: Dealer
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           ))}
-        </AnimatePresence>
 
         {filtered.length === 0 && (
           <Card className="border-border">

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { Eye, Phone, Car, TrendingUp, IndianRupee, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
@@ -79,11 +78,8 @@ export function DashboardOverview({ dealerId }: { dealerId: string }) {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {stats.map((stat, i) => (
-          <motion.div
+          <div
             key={stat.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
           >
             <Card className="border-border">
               <CardContent className="p-4">
@@ -102,7 +98,7 @@ export function DashboardOverview({ dealerId }: { dealerId: string }) {
                 <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
               </CardContent>
             </Card>
-          </motion.div>
+          </div>
         ))}
       </div>
 
