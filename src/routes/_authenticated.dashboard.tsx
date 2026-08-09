@@ -56,6 +56,7 @@ import {
   Moon,
   HelpCircle,
   LucideIcon,
+  Car,
 } from "lucide-react";
 import { differenceInDays, parseISO } from "date-fns";
 import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
@@ -108,6 +109,7 @@ const NAV = [
   { to: "/dashboard/permissions", label: "Access Control", icon: Key, adminOnly: true },
   { to: "/dashboard/reports", label: "Reports", icon: BarChart3 },
   { to: "/dashboard/website", label: "Website", icon: Globe },
+  { to: "/dashboard/dealership", label: "Dealership", icon: Car },
   { to: "/dashboard/modules", label: "Module Store", icon: Store },
   { to: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { to: "/dashboard/support", label: "Help & Support", icon: HelpCircle },
@@ -121,6 +123,7 @@ const MODULE_KEYS: Record<string, ModuleKey> = {
   "/dashboard/crm": "crm",
   "/dashboard/appointments": "appointments",
   "/dashboard/website": "website",
+  "/dashboard/dealership": "dealership",
   "/dashboard/staff": "staff",
   "/dashboard/reports": "reports",
 };
@@ -136,6 +139,7 @@ const ICONS: Record<string, LucideIcon> = {
   BarChart3,
   Key,
   HelpCircle,
+  Car,
 };
 
 function DashboardLayout() {

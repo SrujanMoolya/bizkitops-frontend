@@ -8,7 +8,8 @@ export type ModuleKey =
   | "appointments"
   | "website"
   | "staff"
-  | "reports";
+  | "reports"
+  | "dealership";
 
 export interface ModuleMeta {
   key: ModuleKey;
@@ -83,6 +84,14 @@ export const MODULES: ModuleMeta[] = [
     minPlan: "basic",
     icon: "BarChart3",
     category: "Finance",
+  },
+  {
+    key: "dealership",
+    name: "Dealership",
+    description: "Manage supercar & bike listings, track customer enquiries, and update storefront inventory.",
+    minPlan: "pro",
+    icon: "Car",
+    category: "Operations",
   },
 ];
 
