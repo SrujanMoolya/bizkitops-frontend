@@ -31,7 +31,7 @@ export interface Vehicle {
   createdAt: string;
 }
 
-export const carBrands = ["Ducati", "BMW", "Kawasaki", "Yamaha", "Suzuki", "Honda", "Aprilia", "Triumph", "KTM"];
+export const carBrands = ["Porsche", "BMW", "Mercedes-Benz", "Audi", "Lamborghini", "Ferrari", "Aston Martin", "Jaguar", "Land Rover", "Rolls-Royce"];
 export const bikeBrands = ["Ducati", "BMW", "Kawasaki", "Yamaha", "Suzuki", "Honda", "Aprilia", "Triumph", "KTM"];
 
 export const locations = ["Bangalore", "Mumbai", "Delhi", "Hyderabad", "Pune"];

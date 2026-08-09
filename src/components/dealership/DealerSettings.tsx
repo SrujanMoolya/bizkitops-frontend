@@ -29,7 +29,7 @@ export function DealerSettings({ dealerId, dealerName }: DealerSettingsProps) {
     async function loadSettings() {
       setIsLoading(true);
       try {
-        const data = await apiClient.get(`/api/settings/dealer/${dealerId}`);
+        const data = await apiClient.get(`/settings/dealer/${dealerId}`);
         if (data?.settings) {
           setForm((prev) => ({
             ...prev,
@@ -59,7 +59,7 @@ export function DealerSettings({ dealerId, dealerName }: DealerSettingsProps) {
         contactEmail: form.email,
         address: form.address,
       };
-      await apiClient.put(`/api/settings/dealer/${dealerId}`, payload);
+      await apiClient.put(`/settings/dealer/${dealerId}`, payload);
       toast.success("Profile settings saved successfully.");
     } catch (err: any) {
       toast.error(err.message || "Failed to save settings");

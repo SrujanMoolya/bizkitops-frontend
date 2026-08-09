@@ -34,7 +34,7 @@ export function DealerListings({ dealerId, onAddVehicle, onEditVehicle }: Dealer
     async function loadVehicles() {
       setIsLoading(true);
       try {
-        const data = await apiClient.get(`/api/vehicles/dealer/${dealerId}`);
+        const data = await apiClient.get(`/vehicles/dealer/${dealerId}`);
         setDealerVehicles(data || []);
       } catch (err) {
         console.error("Failed to load inventory:", err);
@@ -52,7 +52,7 @@ export function DealerListings({ dealerId, onAddVehicle, onEditVehicle }: Dealer
   const handleDelete = async () => {
     if (deleteTarget) {
       try {
-        await apiClient.delete(`/api/vehicles/${deleteTarget.id}`);
+        await apiClient.delete(`/vehicles/${deleteTarget.id}`);
         toast.success(`${deleteTarget.name || deleteTarget.model} has been removed.`);
         setDealerVehicles((prev) => prev.filter(v => v.id !== deleteTarget.id));
       } catch (err: any) {

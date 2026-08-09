@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, ImagePlus, X, Save, Eye } from "lucide-react";
+import { ArrowLeft, ImagePlus, X, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -39,27 +39,83 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
   });
 
   const [images, setImages] = useState<string[]>(editVehicle?.images || []);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateField = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    if (errors[key]) {
+      setErrors((prev) => ({ ...prev, [key]: "" }));
+    }
+  };
+
+  const handleTypeChange = (newType: VehicleType) => {
+    setForm((prev) => ({
+      ...prev,
+      type: newType,
+      brand: "", // reset brand when switching types
+      bodyType: "", // reset body type
+      transmission: newType === "bike" ? "" : prev.transmission,
+    }));
+    setErrors((prev) => ({
+      ...prev,
+      brand: "",
+      bodyType: "",
+    }));
+  };
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!form.brand) newErrors.brand = "Brand is required";
+    if (!form.model.trim()) newErrors.model = "Model name is required";
+    if (!form.year) newErrors.year = "Year is required";
+    
+    if (!form.price) {
+      newErrors.price = "Price is required";
+    } else if (parseInt(form.price) <= 0) {
+      newErrors.price = "Price must be greater than 0";
+    }
+
+    if (!form.kmDriven) {
+      newErrors.kmDriven = "KM Driven is required";
+    } else if (parseInt(form.kmDriven) < 0) {
+      newErrors.kmDriven = "KM Driven cannot be negative";
+    }
+
+    if (!form.fuelType) newErrors.fuelType = "Fuel Type is required";
+    if (!form.location) newErrors.location = "Location is required";
+    if (images.length === 0) newErrors.images = "At least one image is required";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.brand || !form.model || !form.price) {
-      toast.error("Please fill in all required fields.");
+    if (!validate()) {
+      toast.error("Please fill in all required fields correctly.");
       return;
     }
 
     setIsSubmitting(true);
     try {
       const payload = {
-        ...form,
-        images,
-        price: parseInt(form.price) || 0,
-        kmDriven: parseInt(form.kmDriven) || 0,
+        type: form.type,
+        brand: form.brand,
+        model: form.model,
         year: parseInt(form.year) || new Date().getFullYear(),
+        price: parseInt(form.price) || 0,
+        km_driven: parseInt(form.kmDriven) || 0,
+        kmDriven: parseInt(form.kmDriven) || 0,
+        fuel_type: form.fuelType,
+        fuelType: form.fuelType,
+        transmission: form.transmission || null,
+        body_type: form.bodyType,
+        bodyType: form.bodyType,
+        owner_type: form.ownerType,
+        ownerType: form.ownerType,
+        location: form.location,
+        description: form.description,
         specifications: {
           engineCapacity: form.engineCapacity,
           mileage: form.mileage,
@@ -68,19 +124,14 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
           rcStatus: form.rcStatus,
         },
         features: form.features ? form.features.split(",").map(f => f.trim()).filter(Boolean) : [],
-        // Remove flattened specs fields from root payload
-        engineCapacity: undefined,
-        mileage: undefined,
-        registrationState: undefined,
-        insuranceValidity: undefined,
-        rcStatus: undefined,
+        images,
       };
 
       if (isEditing && editVehicle) {
-        await apiClient.put(`/api/vehicles/${editVehicle.id}`, payload);
+        await apiClient.put(`/vehicles/${editVehicle.id}`, payload);
         toast.success(`${form.brand} ${form.model} updated successfully.`);
       } else {
-        await apiClient.post(`/api/vehicles`, payload);
+        await apiClient.post(`/vehicles`, payload);
         toast.success(`${form.brand} ${form.model} listed successfully.`);
       }
       onBack();
@@ -97,16 +148,17 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
       "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=800",
       "https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800",
     ];
-    if (images.length < 10) {
-      setImages([...images, demoImages[images.length % demoImages.length]]);
-    }
+    const nextImage = demoImages[images.length % demoImages.length];
+    setImages([...images, nextImage]);
+    setErrors((prev) => ({ ...prev, images: "" }));
   };
 
   const removeImage = (index: number) => {
     setImages(images.filter((_, i) => i !== index));
   };
 
-  const inputClass = "w-full h-10 px-3 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring";
+  const inputClass = "w-full h-10 px-3 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-colors";
+  const errorInputClass = "border-destructive focus:ring-destructive";
 
   return (
     <div className="space-y-6">
@@ -126,15 +178,18 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Images */}
-        <Card className="border-border">
+        <Card className={`border-border ${errors.images ? "border-destructive bg-destructive/5" : ""}`}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold">Photos (up to 10)</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center justify-between">
+              <span>Photos (up to 10) *</span>
+              {errors.images && <span className="text-xs text-destructive font-normal">{errors.images}</span>}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-3">
               {images.map((img, i) => (
                 <div key={i} className="relative group">
-                  <img src={img} alt={`Vehicle ${i + 1}`} className="h-24 w-32 rounded-xl object-cover" />
+                  <img src={img} alt={`Vehicle ${i + 1}`} className="h-24 w-32 rounded-xl object-cover border border-border" />
                   <button
                     type="button"
                     onClick={() => removeImage(i)}
@@ -166,7 +221,7 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
           <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <Label className="text-xs text-muted-foreground">Vehicle Type *</Label>
-              <Select value={form.type} onValueChange={(v) => updateField("type", v)}>
+              <Select value={form.type} onValueChange={handleTypeChange}>
                 <SelectTrigger className="mt-1 rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="car">Car</SelectItem>
@@ -174,10 +229,15 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
                 </SelectContent>
               </Select>
             </div>
+            
             <div>
-              <Label className="text-xs text-muted-foreground">Brand *</Label>
-              <Select value={form.brand} onValueChange={(v) => updateField("brand", v)}>
-                <SelectTrigger className="mt-1 rounded-xl"><SelectValue placeholder="Select brand" /></SelectTrigger>
+              <Label className={`text-xs ${errors.brand ? "text-destructive" : "text-muted-foreground"}`}>
+                Brand * {errors.brand && `(${errors.brand})`}
+              </Label>
+              <Select value={form.brand || undefined} onValueChange={(v) => updateField("brand", v)}>
+                <SelectTrigger className={`mt-1 rounded-xl ${errors.brand ? "border-destructive focus:ring-destructive" : ""}`}>
+                  <SelectValue placeholder="Select brand" />
+                </SelectTrigger>
                 <SelectContent>
                   {(form.type === "car" ? carBrands : bikeBrands).map((b) => (
                     <SelectItem key={b} value={b}>{b}</SelectItem>
@@ -185,33 +245,70 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
                 </SelectContent>
               </Select>
             </div>
+
             <div>
-              <Label className="text-xs text-muted-foreground">Model *</Label>
-              <input type="text" value={form.model} onChange={(e) => updateField("model", e.target.value)} placeholder="e.g. Creta SX" className={inputClass + " mt-1"} />
+              <Label className={`text-xs ${errors.model ? "text-destructive" : "text-muted-foreground"}`}>
+                Model * {errors.model && `(${errors.model})`}
+              </Label>
+              <input 
+                type="text" 
+                value={form.model} 
+                onChange={(e) => updateField("model", e.target.value)} 
+                placeholder={form.type === "car" ? "e.g. Creta SX" : "e.g. Hayabusa"} 
+                className={`${inputClass} mt-1 ${errors.model ? errorInputClass : ""}`} 
+              />
             </div>
+
             <div>
-              <Label className="text-xs text-muted-foreground">Year *</Label>
-              <Select value={form.year} onValueChange={(v) => updateField("year", v)}>
-                <SelectTrigger className="mt-1 rounded-xl"><SelectValue placeholder="Select year" /></SelectTrigger>
+              <Label className={`text-xs ${errors.year ? "text-destructive" : "text-muted-foreground"}`}>
+                Year * {errors.year && `(${errors.year})`}
+              </Label>
+              <Select value={form.year || undefined} onValueChange={(v) => updateField("year", v)}>
+                <SelectTrigger className={`mt-1 rounded-xl ${errors.year ? "border-destructive focus:ring-destructive" : ""}`}>
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
                 <SelectContent>
-                  {Array.from({ length: 15 }, (_, i) => 2025 - i).map((y) => (
+                  {Array.from({ length: 16 }, (_, i) => new Date().getFullYear() - i).map((y) => (
                     <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+
             <div>
-              <Label className="text-xs text-muted-foreground">Price (₹) *</Label>
-              <input type="number" value={form.price} onChange={(e) => updateField("price", e.target.value)} placeholder="e.g. 1080000" className={inputClass + " mt-1"} />
+              <Label className={`text-xs ${errors.price ? "text-destructive" : "text-muted-foreground"}`}>
+                Price (₹) * {errors.price && `(${errors.price})`}
+              </Label>
+              <input 
+                type="number" 
+                value={form.price} 
+                onChange={(e) => updateField("price", e.target.value)} 
+                placeholder="e.g. 1080000" 
+                className={`${inputClass} mt-1 ${errors.price ? errorInputClass : ""}`} 
+              />
             </div>
+
             <div>
-              <Label className="text-xs text-muted-foreground">KM Driven *</Label>
-              <input type="number" value={form.kmDriven} onChange={(e) => updateField("kmDriven", e.target.value)} placeholder="e.g. 32000" className={inputClass + " mt-1"} />
+              <Label className={`text-xs ${errors.kmDriven ? "text-destructive" : "text-muted-foreground"}`}>
+                KM Driven * {errors.kmDriven && `(${errors.kmDriven})`}
+              </Label>
+              <input 
+                type="number" 
+                value={form.kmDriven} 
+                onChange={(e) => updateField("kmDriven", e.target.value)} 
+                placeholder="e.g. 32000" 
+                className={`${inputClass} mt-1 ${errors.kmDriven ? errorInputClass : ""}`} 
+              />
             </div>
+
             <div>
-              <Label className="text-xs text-muted-foreground">Fuel Type *</Label>
-              <Select value={form.fuelType} onValueChange={(v) => updateField("fuelType", v)}>
-                <SelectTrigger className="mt-1 rounded-xl"><SelectValue placeholder="Select" /></SelectTrigger>
+              <Label className={`text-xs ${errors.fuelType ? "text-destructive" : "text-muted-foreground"}`}>
+                Fuel Type * {errors.fuelType && `(${errors.fuelType})`}
+              </Label>
+              <Select value={form.fuelType || undefined} onValueChange={(v) => updateField("fuelType", v)}>
+                <SelectTrigger className={`mt-1 rounded-xl ${errors.fuelType ? "border-destructive focus:ring-destructive" : ""}`}>
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="petrol">Petrol</SelectItem>
                   <SelectItem value="diesel">Diesel</SelectItem>
@@ -220,10 +317,11 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
                 </SelectContent>
               </Select>
             </div>
+
             {form.type === "car" && (
               <div>
                 <Label className="text-xs text-muted-foreground">Transmission</Label>
-                <Select value={form.transmission} onValueChange={(v) => updateField("transmission", v)}>
+                <Select value={form.transmission || undefined} onValueChange={(v) => updateField("transmission", v)}>
                   <SelectTrigger className="mt-1 rounded-xl"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="manual">Manual</SelectItem>
@@ -232,9 +330,10 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
                 </Select>
               </div>
             )}
+
             <div>
               <Label className="text-xs text-muted-foreground">Body Type</Label>
-              <Select value={form.bodyType} onValueChange={(v) => updateField("bodyType", v)}>
+              <Select value={form.bodyType || undefined} onValueChange={(v) => updateField("bodyType", v)}>
                 <SelectTrigger className="mt-1 rounded-xl"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   {form.type === "car"
@@ -244,9 +343,10 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
                 </SelectContent>
               </Select>
             </div>
+
             <div>
               <Label className="text-xs text-muted-foreground">Owner Type</Label>
-              <Select value={form.ownerType} onValueChange={(v) => updateField("ownerType", v)}>
+              <Select value={form.ownerType || undefined} onValueChange={(v) => updateField("ownerType", v)}>
                 <SelectTrigger className="mt-1 rounded-xl"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="first">1st Owner</SelectItem>
@@ -256,10 +356,15 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
                 </SelectContent>
               </Select>
             </div>
+
             <div>
-              <Label className="text-xs text-muted-foreground">Location *</Label>
-              <Select value={form.location} onValueChange={(v) => updateField("location", v)}>
-                <SelectTrigger className="mt-1 rounded-xl"><SelectValue placeholder="Select" /></SelectTrigger>
+              <Label className={`text-xs ${errors.location ? "text-destructive" : "text-muted-foreground"}`}>
+                Location * {errors.location && `(${errors.location})`}
+              </Label>
+              <Select value={form.location || undefined} onValueChange={(v) => updateField("location", v)}>
+                <SelectTrigger className={`mt-1 rounded-xl ${errors.location ? "border-destructive focus:ring-destructive" : ""}`}>
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
                 <SelectContent>
                   {locations.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                 </SelectContent>
@@ -276,23 +381,23 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
           <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <Label className="text-xs text-muted-foreground">Engine Capacity</Label>
-              <input type="text" value={form.engineCapacity} onChange={(e) => updateField("engineCapacity", e.target.value)} placeholder="e.g. 1497 cc" className={inputClass + " mt-1"} />
+              <input type="text" value={form.engineCapacity} onChange={(e) => updateField("engineCapacity", e.target.value)} placeholder="e.g. 1497 cc" className={`${inputClass} mt-1`} />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Mileage</Label>
-              <input type="text" value={form.mileage} onChange={(e) => updateField("mileage", e.target.value)} placeholder="e.g. 17.4 kmpl" className={inputClass + " mt-1"} />
+              <input type="text" value={form.mileage} onChange={(e) => updateField("mileage", e.target.value)} placeholder="e.g. 17.4 kmpl" className={`${inputClass} mt-1`} />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Registration State</Label>
-              <input type="text" value={form.registrationState} onChange={(e) => updateField("registrationState", e.target.value)} placeholder="e.g. Karnataka" className={inputClass + " mt-1"} />
+              <input type="text" value={form.registrationState} onChange={(e) => updateField("registrationState", e.target.value)} placeholder="e.g. KA-03" className={`${inputClass} mt-1`} />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Insurance Validity</Label>
-              <input type="text" value={form.insuranceValidity} onChange={(e) => updateField("insuranceValidity", e.target.value)} placeholder="e.g. March 2025" className={inputClass + " mt-1"} />
+              <input type="text" value={form.insuranceValidity} onChange={(e) => updateField("insuranceValidity", e.target.value)} placeholder="e.g. March 2025" className={`${inputClass} mt-1`} />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">RC Status</Label>
-              <Select value={form.rcStatus} onValueChange={(v) => updateField("rcStatus", v)}>
+              <Select value={form.rcStatus || undefined} onValueChange={(v) => updateField("rcStatus", v)}>
                 <SelectTrigger className="mt-1 rounded-xl"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Available">Available</SelectItem>
@@ -317,7 +422,7 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
                 onChange={(e) => updateField("description", e.target.value)}
                 placeholder="Describe your vehicle..."
                 rows={4}
-                className="w-full mt-1 px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                className="w-full mt-1 px-3 py-2 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none transition-colors"
               />
             </div>
             <div>
@@ -327,7 +432,7 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
                 value={form.features}
                 onChange={(e) => updateField("features", e.target.value)}
                 placeholder="e.g. Sunroof, Cruise Control, LED Headlamps"
-                className={inputClass + " mt-1"}
+                className={`${inputClass} mt-1`}
               />
             </div>
           </CardContent>
@@ -336,10 +441,7 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
         {/* Actions */}
         <div className="flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={onBack}>Cancel</Button>
-          <Button type="button" variant="outline" className="gap-2">
-            <Eye className="h-4 w-4" /> Preview
-          </Button>
-          <Button type="submit" disabled={isSubmitting} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button type="submit" disabled={isSubmitting} className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
             <Save className="h-4 w-4" /> {isSubmitting ? "Saving..." : isEditing ? "Save Changes" : "Publish Listing"}
           </Button>
         </div>

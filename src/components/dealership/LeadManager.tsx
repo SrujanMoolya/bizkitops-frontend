@@ -33,7 +33,7 @@ export function LeadManager({ dealerId }: { dealerId: string }) {
     async function fetchLeads() {
       setIsLoading(true);
       try {
-        const data = await apiClient.get(`/api/leads/dealer/${dealerId}`);
+        const data = await apiClient.get(`/leads/dealer/${dealerId}`);
         setLeads(data || []);
       } catch (err) {
         console.error("Failed to load leads:", err);

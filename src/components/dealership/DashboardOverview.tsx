@@ -38,8 +38,8 @@ export function DashboardOverview({ dealerId }: { dealerId: string }) {
       setIsLoading(true);
       try {
         const [vData, lData] = await Promise.all([
-          apiClient.get(`/api/vehicles/dealer/${dealerId}`),
-          apiClient.get(`/api/leads/dealer/${dealerId}`)
+          apiClient.get(`/vehicles/dealer/${dealerId}`),
+          apiClient.get(`/leads/dealer/${dealerId}`)
         ]);
         setVehicles(vData || []);
         setLeads(lData || []);

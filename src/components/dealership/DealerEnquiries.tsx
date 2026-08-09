@@ -36,7 +36,7 @@ export function DealerEnquiries({ dealerId }: { dealerId: string }) {
     async function fetchLeads() {
       setIsLoading(true);
       try {
-        const data = await apiClient.get(`/api/leads/dealer/${dealerId}`);
+        const data = await apiClient.get(`/leads/dealer/${dealerId}`);
         setEnquiries(data || []);
       } catch (err) {
         console.error("Failed to fetch enquiries:", err);
@@ -58,7 +58,7 @@ export function DealerEnquiries({ dealerId }: { dealerId: string }) {
 
   const updateStatus = async (id: string, newStatus: EnquiryStatus) => {
     try {
-      await apiClient.put(`/api/leads/${id}`, { status: newStatus });
+      await apiClient.put(`/leads/${id}`, { status: newStatus });
       setEnquiries((prev) =>
         prev.map((e) => (e.id === id ? { ...e, status: newStatus } : e))
       );
@@ -74,7 +74,7 @@ export function DealerEnquiries({ dealerId }: { dealerId: string }) {
       prev.map((e) => (e.id === id ? { ...e, notes } : e))
     );
     try {
-      await apiClient.put(`/api/leads/${id}`, { notes });
+      await apiClient.put(`/leads/${id}`, { notes });
     } catch (err) {
       console.error("Failed to save notes:", err);
     }
