@@ -72,7 +72,7 @@ export function LeadManager({ dealerId }: { dealerId: string }) {
         <>
           <div className="flex gap-2 overflow-x-auto pb-2">
             {stages.map((stage) => {
-              const count = leads.filter((l) => l.status === stage).length;
+              const count = leads.filter((l) => ((l.status || (l as any).stage || "new") as string).toLowerCase() === stage).length;
               const config = stageConfig[stage] || stageConfig.new;
               return (
                 <div key={stage} className="flex items-center gap-2">
@@ -86,41 +86,74 @@ export function LeadManager({ dealerId }: { dealerId: string }) {
           </div>
 
           {/* Lead Cards */}
-          <div className="space-y-3">
-            {leads.map((lead) => {
-              const config = stageConfig[lead.status] || stageConfig.new;
-              const vehicleName = lead.targetVehicle ? `${lead.targetVehicle.brand} ${lead.targetVehicle.model}` : "General Enquiry";
-              return (
-                <Card key={lead.id} className={`border-l-4 border-primary/30`}>
-                  <CardContent className="p-4">
-                    <div className="flex flex-col sm:flex-row gap-4 items-start">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <span className="text-sm font-semibold text-primary">{lead.name?.[0] || "L"}</span>
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <p className="font-semibold text-foreground text-sm">{lead.name}</p>
-                            <Badge className={`text-[10px] h-5 ${config.color} border-0`}>{config.label}</Badge>
+          {leads.length === 0 ? (
+            <Card className="border-border p-12 text-center">
+              <p className="font-semibold text-foreground text-base">No Leads Received Yet</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                Customer inquiries submitted on Hyper Ride Superbikes or your storefront will automatically appear here.
+              </p>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {leads.map((lead) => {
+                const leadName = lead.name || (lead as any).customer_name || (lead as any).customerName || "Customer Lead";
+                const leadStatus = ((lead.status || (lead as any).stage || "new") as string).toLowerCase() as keyof typeof stageConfig;
+                const config = stageConfig[leadStatus] || stageConfig.new;
+                const vehicleName = lead.targetVehicle ? `${lead.targetVehicle.brand} ${lead.targetVehicle.model}` : "General Showroom Inquiry";
+                const notes = lead.notes || (lead as any).message || "";
+                const cleanPhone = lead.phone ? lead.phone.replace(/[^0-9]/g, "") : "";
+
+                return (
+                  <Card key={lead.id} className="border-l-4 border-primary">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col sm:flex-row gap-4 items-start justify-between">
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <span className="text-sm font-bold text-primary">{leadName.charAt(0).toUpperCase()}</span>
                           </div>
-                          <p className="text-xs text-muted-foreground">{vehicleName} • ₹{((lead.budget || 0) / 100000).toFixed(1)}L</p>
-                          {lead.notes && (
-                            <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
-                              <span className="truncate max-w-[200px]">{lead.notes}</span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                              <p className="font-semibold text-foreground text-sm">{leadName}</p>
+                              <Badge className={`text-[10px] h-5 ${config.color} border-0`}>{config.label}</Badge>
+                              {lead.phone && <span className="text-xs text-muted-foreground font-mono">({lead.phone})</span>}
                             </div>
+                            <p className="text-xs font-medium text-foreground/80">{vehicleName}</p>
+                            {notes && (
+                              <p className="text-xs text-muted-foreground mt-1 bg-muted/40 p-2 rounded-lg leading-relaxed">
+                                {notes}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          {lead.phone && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-xs h-8"
+                              onClick={() => window.open(`tel:${cleanPhone}`, "_self")}
+                            >
+                              Call
+                            </Button>
+                          )}
+                          {lead.phone && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-xs h-8 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                              onClick={() => window.open(`https://wa.me/${cleanPhone}`, "_blank")}
+                            >
+                              WhatsApp
+                            </Button>
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-1.5">
-                        <Button variant="outline" size="sm" className="text-xs h-7">Call</Button>
-                        <Button variant="outline" size="sm" className="text-xs h-7 border-emerald-500 text-emerald-600 hover:bg-emerald-50">WhatsApp</Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </>
       )}
     </div>

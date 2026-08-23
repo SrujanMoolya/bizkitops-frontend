@@ -49,10 +49,10 @@ export function DealerEnquiries({ dealerId }: { dealerId: string }) {
 
   const filtered = enquiries.filter((e) => {
     const matchesStatus = statusFilter === "all" || e.status === statusFilter;
-    const vehicleName = e.targetVehicle ? `${e.targetVehicle.brand} ${e.targetVehicle.model}` : "";
-    const matchesSearch =
-      e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      vehicleName.toLowerCase().includes(searchQuery.toLowerCase());
+    const customerName = (e.name || (e as any).customer_name || (e as any).customerName || "").toLowerCase();
+    const vehicleName = e.targetVehicle ? `${e.targetVehicle.brand || ""} ${e.targetVehicle.model || ""}`.toLowerCase() : "";
+    const search = (searchQuery || "").toLowerCase();
+    const matchesSearch = customerName.includes(search) || vehicleName.includes(search);
     return matchesStatus && matchesSearch;
   });
 
@@ -132,47 +132,71 @@ export function DealerEnquiries({ dealerId }: { dealerId: string }) {
       ) : (
       <div className="space-y-3">
         {filtered.map((enq) => {
-          const config = statusConfig[enq.status] || statusConfig.new;
-          const vehicleName = enq.targetVehicle ? `${enq.targetVehicle.brand} ${enq.targetVehicle.model}` : "General Enquiry";
-          const displayTime = new Date(enq.createdAt).toLocaleDateString();
+          const name = enq.name || (enq as any).customer_name || (enq as any).customerName || "Showroom Customer";
+          const statusKey = (enq.status || "new").toLowerCase() as EnquiryStatus;
+          const config = statusConfig[statusKey] || statusConfig.new;
+          const vehicleName = enq.targetVehicle ? `${enq.targetVehicle.brand} ${enq.targetVehicle.model}` : "General Showroom Enquiry";
+          const displayTime = (enq as any).created_at ? new Date((enq as any).created_at).toLocaleDateString() : "Recent";
+          const cleanPhone = enq.phone ? enq.phone.replace(/[^0-9]/g, "") : "";
+
           return (
             <Card key={enq.id} className="border-border">
               <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex items-start gap-3 flex-1">
+                <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
                     <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <span className="text-sm font-semibold text-primary">{enq.name?.[0] || "E"}</span>
+                      <span className="text-sm font-bold text-primary">{name.charAt(0).toUpperCase()}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-semibold text-foreground text-sm">{enq.name}</p>
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <p className="font-semibold text-foreground text-sm">{name}</p>
                         <Badge className={`text-[10px] h-5 ${config.color} border-0`}>
                           {config.label}
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">{vehicleName}</p>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          {enq.source === "WhatsApp" ? <MessageCircle className="h-3 w-3" /> : <Phone className="h-3 w-3" />}
-                          {enq.source || "Website"}
+                      <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
+                        <span className="flex items-center gap-1 font-mono">
+                          <Phone className="h-3 w-3 text-primary" />
+                          {enq.phone}
                         </span>
-                        <span>{enq.phone}</span>
                         <span>{displayTime}</span>
                       </div>
-                      {/* Notes */}
+                      {/* Notes / Message */}
                       <div className="mt-2">
                         <textarea
                           placeholder="Add notes..."
-                          value={enq.notes || ""}
+                          value={enq.notes || (enq as any).message || ""}
                           onChange={(e) => updateNotes(enq.id, e.target.value)}
-                          rows={1}
-                          className="w-full text-xs px-2 py-1.5 rounded-lg border border-input bg-muted/30 focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                          rows={2}
+                          className="w-full text-xs p-2 rounded-lg border border-input bg-muted/30 focus:outline-none focus:ring-1 focus:ring-ring resize-none leading-relaxed text-foreground"
                         />
                       </div>
                     </div>
                   </div>
-                  {/* Status Actions */}
-                  <div className="flex sm:flex-col gap-1.5 shrink-0">
+
+                  {/* Actions & WhatsApp */}
+                  <div className="flex flex-wrap sm:flex-col gap-1.5 shrink-0">
+                    {enq.phone && (
+                      <div className="flex gap-1.5 mb-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-xs h-7"
+                          onClick={() => window.open(`tel:${cleanPhone}`, "_self")}
+                        >
+                          Call
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-xs h-7 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                          onClick={() => window.open(`https://wa.me/${cleanPhone}`, "_blank")}
+                        >
+                          WhatsApp
+                        </Button>
+                      </div>
+                    )}
                     {enq.status !== "contacted" && (
                       <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => updateStatus(enq.id, "contacted")}>
                         Mark Contacted

@@ -185,17 +185,35 @@ export function DashboardOverview({ dealerId }: { dealerId: string }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {recentActivity.map((item, i) => (
-              <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/55 transition-colors">
-                <div className={`h-2 w-2 rounded-full shrink-0 ${
-                  item.type === "enquiry" ? "bg-orange-500" :
-                  item.type === "view" ? "bg-primary" :
-                  item.type === "boost" ? "bg-destructive" : "bg-emerald-500"
-                }`} />
-                <p className="text-sm text-foreground flex-1">{item.text}</p>
-                <span className="text-xs text-muted-foreground shrink-0">{item.time}</span>
-              </div>
-            ))}
+            {leads.length > 0 ? (
+              leads.slice(0, 5).map((l, i) => {
+                const customer = l.customer_name || l.name || (l as any).customerName || "Showroom Customer";
+                const notes = l.message || l.notes || "New inquiry submitted";
+                const time = (l as any).created_at ? new Date((l as any).created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Recent";
+
+                return (
+                  <div key={l.id || i} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/55 transition-colors">
+                    <div className="h-2.5 w-2.5 rounded-full shrink-0 bg-primary" />
+                    <p className="text-sm text-foreground flex-1">
+                      <strong className="font-semibold text-foreground">{customer}</strong> — <span className="text-muted-foreground">{notes}</span>
+                    </p>
+                    <span className="text-xs text-muted-foreground shrink-0">{time}</span>
+                  </div>
+                );
+              })
+            ) : (
+              recentActivity.map((item, i) => (
+                <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/55 transition-colors">
+                  <div className={`h-2 w-2 rounded-full shrink-0 ${
+                    item.type === "enquiry" ? "bg-orange-500" :
+                    item.type === "view" ? "bg-primary" :
+                    item.type === "boost" ? "bg-destructive" : "bg-emerald-500"
+                  }`} />
+                  <p className="text-sm text-foreground flex-1">{item.text}</p>
+                  <span className="text-xs text-muted-foreground shrink-0">{item.time}</span>
+                </div>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
