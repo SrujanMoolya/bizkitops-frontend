@@ -100,8 +100,37 @@ export function DealerEnquiries({ dealerId, onConvertVehicle }: DealerEnquiriesP
 
   // Helper to categorize lead
   const isSellLead = (enq: Enquiry) => {
-    const rawMessage = (enq.message || enq.notes || "").toUpperCase();
-    return enq.leadType === "sell" || rawMessage.includes("SELL INQUIRY") || (enq.vehicleDetails && Object.keys(enq.vehicleDetails).length > 0);
+    const rawType = ((enq as any).lead_type || enq.leadType || "").toLowerCase();
+    if (rawType === "sell") return true;
+
+    const vehicleDetails = enq.vehicleDetails || (enq as any).vehicle_details;
+    if (vehicleDetails && typeof vehicleDetails === "object" && Object.keys(vehicleDetails).length > 0) {
+      return true;
+    }
+
+    const rawMessage = (enq.message || (enq as any).notes || (enq as any).message || "").toUpperCase();
+    const rawEmail = (enq.email || (enq as any).email || "").toLowerCase();
+
+    if (
+      rawMessage.includes("SELL INQUIRY") ||
+      rawMessage.includes("SELL MY") ||
+      rawMessage.includes("VALUATION") ||
+      rawMessage.includes("EXPECTED:") ||
+      rawMessage.includes("EXPECTED PRICE") ||
+      rawMessage.includes("KM DRIVEN") ||
+      rawMessage.includes("KM:") ||
+      rawEmail.includes("@hyperride.in") ||
+      (enq as any).source === "sell_page"
+    ) {
+      return true;
+    }
+
+    // If there is no target vehicle attached and message does NOT say "INTERESTED IN THE"
+    if (!enq.targetVehicle && !(enq as any).vehicle_id && !rawMessage.includes("INTERESTED IN THE")) {
+      return true;
+    }
+
+    return false;
   };
 
   // Category counts
@@ -252,7 +281,7 @@ export function DealerEnquiries({ dealerId, onConvertVehicle }: DealerEnquiriesP
             const sellDetails = enq.vehicleDetails || {};
 
             // Extract sell details fallback from raw message if needed
-            const rawMessage = enq.message || (enq as any).notes || "";
+            const rawMessage = enq.message || (enq as any).notes || (enq as any).message || "";
             let sellBrand = sellDetails.brand || "";
             let sellModel = sellDetails.model || "";
             let sellYear = sellDetails.year || "";
@@ -262,14 +291,22 @@ export function DealerEnquiries({ dealerId, onConvertVehicle }: DealerEnquiriesP
             let sellCondition = sellDetails.condition || "";
             let sellImages = sellDetails.images || [];
 
-            if (!sellBrand && rawMessage.includes("SELL INQUIRY:")) {
-              const parts = rawMessage.replace("SELL INQUIRY:", "").split("|");
+            if (!sellBrand && rawMessage.toUpperCase().includes("SELL INQUIRY:")) {
+              const parts = rawMessage.split("|");
               if (parts[0]) {
-                const titleParts = parts[0].trim().split(" ");
+                const titleStr = parts[0].replace(/SELL INQUIRY:/i, "").trim();
+                const titleParts = titleStr.split(" ");
                 sellYear = titleParts[0] || "";
                 sellBrand = titleParts[1] || "";
                 sellModel = titleParts.slice(2).join(" ") || "";
               }
+              parts.forEach((p) => {
+                const str = p.trim();
+                if (/^KM:/i.test(str)) sellKm = str.replace(/^KM:/i, "").replace("km", "").trim();
+                if (/^Owner:/i.test(str)) sellOwner = str.replace(/^Owner:/i, "").trim();
+                if (/^Condition:/i.test(str)) sellCondition = str.replace(/^Condition:/i, "").trim();
+                if (/^Expected:/i.test(str)) sellExpected = str.replace(/^Expected:/i, "").replace("₹", "").trim();
+              });
             }
 
             return (
