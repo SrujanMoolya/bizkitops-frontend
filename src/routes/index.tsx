@@ -30,6 +30,7 @@ import {
   Building2,
   Lock,
   ThumbsUp,
+  LogOut,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -227,6 +228,21 @@ function Landing() {
       subscription.unsubscribe();
     };
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut().catch(async (err) => {
+        console.warn("Web sign out API failed, performing local sign out:", err);
+        await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+      });
+    } catch (e) {
+      console.error("Web logout error:", e);
+    }
+    document.cookie = `sb-access-token=; path=/; max-age=0; SameSite=Lax; Secure`;
+    document.cookie = `sb-refresh-token=; path=/; max-age=0; SameSite=Lax; Secure`;
+    setSession(null);
+    window.location.href = "/login";
+  };
 
   const [activeWidgetTab, setActiveWidgetTab] = useState<"invoice" | "inventory" | "crm" | "storefront">("invoice");
 
@@ -482,6 +498,15 @@ function Landing() {
                 </Button>
                 <Button asChild size="sm" className="shadow-soft bg-primary hover:bg-primary/95 text-primary-foreground">
                   <Link to="/dashboard">Dashboard</Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
                 </Button>
               </>
             ) : (
