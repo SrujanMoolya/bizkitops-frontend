@@ -135,13 +135,34 @@ export function DealerEnquiries({ dealerId }: { dealerId: string }) {
           const name = enq.name || (enq as any).customer_name || (enq as any).customerName || "Showroom Customer";
           const statusKey = (enq.status || "new").toLowerCase() as EnquiryStatus;
           const config = statusConfig[statusKey] || statusConfig.new;
-          const vehicleName = enq.targetVehicle ? `${enq.targetVehicle.brand} ${enq.targetVehicle.model}` : "General Showroom Enquiry";
+          
+          const rawMessage = (enq as any).message || enq.notes || "";
+          const isSellRequest = rawMessage.toUpperCase().includes("SELL INQUIRY") || (enq as any).source === "sell_page";
+
+          // Extract vehicle name from targetVehicle OR rawMessage
+          let vehicleTitle = "General Showroom Enquiry";
+          if (enq.targetVehicle) {
+            vehicleTitle = `${enq.targetVehicle.year || ''} ${enq.targetVehicle.brand || ''} ${enq.targetVehicle.model || ''}`.trim();
+          } else if (rawMessage.includes("interested in the ")) {
+            const match = rawMessage.match(/interested in the ([^.]+)/i);
+            if (match && match[1]) {
+              vehicleTitle = match[1].replace("undefined", "").trim();
+            }
+          } else if (isSellRequest) {
+            const match = rawMessage.match(/SELL INQUIRY:\s*([^|]+)/i);
+            if (match && match[1]) {
+              vehicleTitle = match[1].trim();
+            } else {
+              vehicleTitle = "Vehicle Trade-In / Sell Quote Request";
+            }
+          }
+
           const displayTime = (enq as any).created_at ? new Date((enq as any).created_at).toLocaleDateString() : "Recent";
           const cleanPhone = enq.phone ? enq.phone.replace(/[^0-9]/g, "") : "";
 
           return (
-            <Card key={enq.id} className="border-border">
-              <CardContent className="p-4">
+            <Card key={enq.id} className="border-border shadow-sm hover:border-primary/40 transition-all">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
                     <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -149,27 +170,47 @@ export function DealerEnquiries({ dealerId }: { dealerId: string }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <p className="font-semibold text-foreground text-sm">{name}</p>
+                        <p className="font-bold text-foreground text-sm">{name}</p>
                         <Badge className={`text-[10px] h-5 ${config.color} border-0`}>
                           {config.label}
                         </Badge>
+                        {isSellRequest && (
+                          <Badge variant="outline" className="text-[10px] h-5 border-amber-500/40 text-amber-500 bg-amber-500/10 font-bold uppercase">
+                            Sell / Trade-In Request
+                          </Badge>
+                        )}
                       </div>
-                      <p className="text-xs text-muted-foreground">{vehicleName}</p>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
-                        <span className="flex items-center gap-1 font-mono">
+
+                      <div className="flex items-center gap-2 text-xs font-semibold text-primary mb-2">
+                        <span>{vehicleTitle}</span>
+                      </div>
+
+                      <div className="flex items-center gap-3 mb-3 text-xs text-muted-foreground flex-wrap">
+                        <span className="flex items-center gap-1 font-mono font-medium">
                           <Phone className="h-3 w-3 text-primary" />
                           {enq.phone}
                         </span>
+                        <span>•</span>
                         <span>{displayTime}</span>
                       </div>
-                      {/* Notes / Message */}
-                      <div className="mt-2">
+
+                      {/* Customer Enquiry Message */}
+                      {rawMessage && (
+                        <div className="p-3 rounded-xl bg-muted/60 border border-border text-xs leading-relaxed text-foreground font-medium mb-3">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Customer Message / Specifications:</p>
+                          <p className="whitespace-pre-line">{rawMessage}</p>
+                        </div>
+                      )}
+
+                      {/* Staff Internal Notes */}
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Internal Follow-Up Notes:</p>
                         <textarea
-                          placeholder="Add notes..."
-                          value={enq.notes || (enq as any).message || ""}
+                          placeholder="Type internal notes here..."
+                          value={enq.notes || ""}
                           onChange={(e) => updateNotes(enq.id, e.target.value)}
                           rows={2}
-                          className="w-full text-xs p-2 rounded-lg border border-input bg-muted/30 focus:outline-none focus:ring-1 focus:ring-ring resize-none leading-relaxed text-foreground"
+                          className="w-full text-xs p-2.5 rounded-xl border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none leading-relaxed text-foreground"
                         />
                       </div>
                     </div>
@@ -182,7 +223,7 @@ export function DealerEnquiries({ dealerId }: { dealerId: string }) {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="text-xs h-7"
+                          className="text-xs h-8"
                           onClick={() => window.open(`tel:${cleanPhone}`, "_self")}
                         >
                           Call
@@ -190,7 +231,7 @@ export function DealerEnquiries({ dealerId }: { dealerId: string }) {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="text-xs h-7 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                          className="text-xs h-8 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
                           onClick={() => window.open(`https://wa.me/${cleanPhone}`, "_blank")}
                         >
                           WhatsApp
@@ -198,17 +239,17 @@ export function DealerEnquiries({ dealerId }: { dealerId: string }) {
                       </div>
                     )}
                     {enq.status !== "contacted" && (
-                      <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => updateStatus(enq.id, "contacted")}>
+                      <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => updateStatus(enq.id, "contacted")}>
                         Mark Contacted
                       </Button>
                     )}
                     {enq.status !== "converted" && (
-                      <Button variant="outline" size="sm" className="text-xs h-7 border-emerald-500 text-emerald-600 hover:bg-emerald-50" onClick={() => updateStatus(enq.id, "converted")}>
+                      <Button variant="outline" size="sm" className="text-xs h-8 border-emerald-500 text-emerald-600 hover:bg-emerald-50" onClick={() => updateStatus(enq.id, "converted")}>
                         Converted
                       </Button>
                     )}
                     {enq.status !== "lost" && (
-                      <Button variant="ghost" size="sm" className="text-xs h-7 text-muted-foreground" onClick={() => updateStatus(enq.id, "lost")}>
+                      <Button variant="ghost" size="sm" className="text-xs h-8 text-muted-foreground" onClick={() => updateStatus(enq.id, "lost")}>
                         Mark Lost
                       </Button>
                     )}
