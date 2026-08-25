@@ -108,25 +108,24 @@ export function DealerEnquiries({ dealerId, onConvertVehicle }: DealerEnquiriesP
       return true;
     }
 
-    const rawMessage = (enq.message || (enq as any).notes || (enq as any).message || "").toUpperCase();
+    const rawMsg = `${enq.message || ""} ${(enq as any).notes || ""} ${(enq as any).message || ""}`.toUpperCase();
     const rawEmail = (enq.email || (enq as any).email || "").toLowerCase();
 
     if (
-      rawMessage.includes("SELL INQUIRY") ||
-      rawMessage.includes("SELL MY") ||
-      rawMessage.includes("VALUATION") ||
-      rawMessage.includes("EXPECTED:") ||
-      rawMessage.includes("EXPECTED PRICE") ||
-      rawMessage.includes("KM DRIVEN") ||
-      rawMessage.includes("KM:") ||
+      rawMsg.includes("SELL INQUIRY") ||
+      rawMsg.includes("SELL MY") ||
+      rawMsg.includes("VALUATION") ||
+      rawMsg.includes("EXPECTED") ||
+      rawMsg.includes("KM:") ||
+      rawMsg.includes("KM DRIVEN") ||
       rawEmail.includes("@hyperride.in") ||
       (enq as any).source === "sell_page"
     ) {
       return true;
     }
 
-    // If there is no target vehicle attached and message does NOT say "INTERESTED IN THE"
-    if (!enq.targetVehicle && !(enq as any).vehicle_id && !rawMessage.includes("INTERESTED IN THE")) {
+    // If a lead has no target vehicle attached, it is a sell lead!
+    if (!enq.targetVehicle && !(enq as any).vehicle_id && !(enq as any).vehicleId) {
       return true;
     }
 
