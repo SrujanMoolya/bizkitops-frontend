@@ -26,9 +26,12 @@ const statusConfig: Record<EnquiryStatus, { label: string; color: string; icon: 
   lost: { label: "Lost", color: "bg-rose-500/10 text-rose-500 border border-rose-500/30", icon: XCircle },
 };
 
+type CategoryFilter = "all" | "buy" | "sell";
+
 export function DealerEnquiries({ dealerId }: { dealerId: string }) {
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [statusFilter, setStatusFilter] = useState<EnquiryStatus | "all">("all");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
   const [isLoading, setIsLoading] = useState(true);
@@ -50,12 +53,19 @@ export function DealerEnquiries({ dealerId }: { dealerId: string }) {
 
   const filtered = enquiries.filter((e) => {
     const matchesStatus = statusFilter === "all" || e.status === statusFilter;
+    const rawMessage = ((e as any).message || e.notes || "").toLowerCase();
+    const isSell = rawMessage.includes("sell inquiry") || (e as any).source === "sell_page" || rawMessage.includes("km:") || rawMessage.includes("expected:");
+    
+    let matchesCategory = true;
+    if (categoryFilter === "buy") matchesCategory = !isSell;
+    if (categoryFilter === "sell") matchesCategory = isSell;
+
     const customerName = (e.name || (e as any).customer_name || (e as any).customerName || "").toLowerCase();
     const vehicleName = e.targetVehicle ? `${e.targetVehicle.brand || ""} ${e.targetVehicle.model || ""}`.toLowerCase() : "";
-    const rawMessage = ((e as any).message || e.notes || "").toLowerCase();
     const search = (searchQuery || "").toLowerCase();
     const matchesSearch = customerName.includes(search) || vehicleName.includes(search) || rawMessage.includes(search);
-    return matchesStatus && matchesSearch;
+
+    return matchesStatus && matchesCategory && matchesSearch;
   });
 
   const updateStatus = async (id: string, newStatus: EnquiryStatus) => {
@@ -125,6 +135,34 @@ export function DealerEnquiries({ dealerId }: { dealerId: string }) {
         </div>
       </div>
 
+      {/* Category Sub-tabs (Buy Enquiries vs Sell Requests) */}
+      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-muted/60 border border-border w-fit">
+        <Button
+          variant={categoryFilter === "all" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => setCategoryFilter("all")}
+          className="h-8 text-xs font-bold rounded-xl gap-1.5"
+        >
+          <Sparkles className="w-3.5 h-3.5" /> All Requests ({enquiries.length})
+        </Button>
+        <Button
+          variant={categoryFilter === "buy" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => setCategoryFilter("buy")}
+          className="h-8 text-xs font-bold rounded-xl gap-1.5 text-blue-500 hover:text-blue-600"
+        >
+          🛒 Stock Purchase Enquiries ({enquiries.filter(e => !((e as any).message || e.notes || "").toLowerCase().includes("sell inquiry")).length})
+        </Button>
+        <Button
+          variant={categoryFilter === "sell" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => setCategoryFilter("sell")}
+          className="h-8 text-xs font-bold rounded-xl gap-1.5 text-amber-500 hover:text-amber-600"
+        >
+          💰 Bike Sell / Trade-In Quotes ({enquiries.filter(e => ((e as any).message || e.notes || "").toLowerCase().includes("sell inquiry")).length})
+        </Button>
+      </div>
+
       {isLoading ? (
         <div className="py-20 text-center text-muted-foreground">Loading enquiries...</div>
       ) : viewMode === "list" ? (
@@ -170,22 +208,23 @@ export function DealerEnquiries({ dealerId }: { dealerId: string }) {
               const config = statusConfig[statusKey] || statusConfig.new;
               
               const rawMessage = (enq as any).message || enq.notes || "";
-              const isSellRequest = rawMessage.toUpperCase().includes("SELL INQUIRY") || (enq as any).source === "sell_page";
+              const isSellRequest = rawMessage.toUpperCase().includes("SELL INQUIRY") || (enq as any).source === "sell_page" || rawMessage.toLowerCase().includes("km:") || rawMessage.toLowerCase().includes("expected:");
 
               let vehicleTitle = "General Showroom Enquiry";
-              if (enq.targetVehicle) {
-                vehicleTitle = `${enq.targetVehicle.year || ''} ${enq.targetVehicle.brand || ''} ${enq.targetVehicle.model || ''}`.trim();
-              } else if (rawMessage.includes("interested in the ")) {
-                const match = rawMessage.match(/interested in the ([^.]+)/i);
-                if (match && match[1]) {
-                  vehicleTitle = match[1].replace("undefined", "").trim();
-                }
-              } else if (isSellRequest) {
+              if (isSellRequest) {
                 const match = rawMessage.match(/SELL INQUIRY:\s*([^|]+)/i);
                 if (match && match[1]) {
                   vehicleTitle = match[1].trim();
                 } else {
-                  vehicleTitle = "Vehicle Trade-In / Sell Quote Request";
+                  vehicleTitle = "Customer Selling Vehicle to Showroom";
+                }
+              } else if (enq.targetVehicle) {
+                vehicleTitle = `${enq.targetVehicle.year || ''} ${enq.targetVehicle.brand || ''} ${enq.targetVehicle.model || ''}`.trim();
+              } else if (rawMessage.includes("interested in the ")) {
+                const match = rawMessage.match(/interested in the ([^.]+)/i);
+                if (match && match[1]) {
+                  const cleaned = match[1].replace(/\bundefined\b/gi, "").trim();
+                  vehicleTitle = cleaned ? cleaned : "Stock Purchase Enquiry";
                 }
               }
 
@@ -206,14 +245,18 @@ export function DealerEnquiries({ dealerId }: { dealerId: string }) {
                             <Badge className={`text-[10px] h-5 ${config.color} border-0`}>
                               {config.label}
                             </Badge>
-                            {isSellRequest && (
+                            {isSellRequest ? (
                               <Badge variant="outline" className="text-[10px] h-5 border-amber-500/40 text-amber-500 bg-amber-500/10 font-bold uppercase">
-                                Sell / Trade-In Request
+                                💰 Customer Selling Bike
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] h-5 border-blue-500/40 text-blue-500 bg-blue-500/10 font-bold uppercase">
+                                🛒 Buying Showroom Stock
                               </Badge>
                             )}
                           </div>
 
-                          <div className="flex items-center gap-2 text-xs font-semibold text-primary mb-2">
+                          <div className="flex items-center gap-2 text-xs font-bold text-primary mb-2">
                             <span>{vehicleTitle}</span>
                           </div>
 
