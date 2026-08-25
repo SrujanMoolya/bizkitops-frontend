@@ -75,7 +75,13 @@ function DealershipPage() {
         </TabsContent>
 
         <TabsContent value="enquiries">
-          <DealerEnquiries dealerId={business.id} />
+          <DealerEnquiries
+            dealerId={business.id}
+            onConvertVehicle={(initialData) => {
+              setEditVehicle(initialData);
+              setShowAddForm(true);
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="settings">
