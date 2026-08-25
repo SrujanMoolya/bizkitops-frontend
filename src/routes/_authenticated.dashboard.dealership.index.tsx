@@ -58,8 +58,7 @@ function DealershipPage() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="listings">Inventory</TabsTrigger>
-          <TabsTrigger value="leads">Lead Manager</TabsTrigger>
-          <TabsTrigger value="enquiries">Enquiries</TabsTrigger>
+          <TabsTrigger value="enquiries">Leads & Enquiries</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -73,10 +72,6 @@ function DealershipPage() {
             onAddVehicle={handleAddVehicle}
             onEditVehicle={handleEditVehicle}
           />
-        </TabsContent>
-
-        <TabsContent value="leads">
-          <LeadManager dealerId={business.id} />
         </TabsContent>
 
         <TabsContent value="enquiries">

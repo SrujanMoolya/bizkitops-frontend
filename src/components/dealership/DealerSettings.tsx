@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { BadgeCheck, Crown, Save } from "lucide-react";
+import { BadgeCheck, Crown, Save, Globe, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 
@@ -155,6 +155,46 @@ export function DealerSettings({ dealerId, dealerName }: DealerSettingsProps) {
                 </Button>
               </div>
             ))}
+          </div>
+        </CardContent>
+      </Card>
+      {/* Connected Customer Storefronts */}
+      <Card className="border-border">
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h3 className="font-semibold text-foreground text-sm flex items-center gap-2">
+                <Globe className="h-4 w-4 text-primary" /> Connected Customer Storefronts
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Your BizKitOps dealership inventory and leads sync automatically with your custom frontend websites.
+              </p>
+            </div>
+            <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/30">
+              Live REST API Synced
+            </Badge>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="p-4 rounded-xl border border-border bg-muted/30 flex items-center justify-between gap-2">
+              <div>
+                <p className="font-bold text-xs text-foreground">HyperRide Superbikes</p>
+                <p className="text-[11px] text-muted-foreground font-mono">http://localhost:3000</p>
+              </div>
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => window.open("http://localhost:3000", "_blank")}>
+                Visit Site <ExternalLink className="h-3 w-3 ml-1" />
+              </Button>
+            </div>
+
+            <div className="p-4 rounded-xl border border-border bg-muted/30 flex items-center justify-between gap-2">
+              <div>
+                <p className="font-bold text-xs text-foreground">sk21 MotoStock</p>
+                <p className="text-[11px] text-muted-foreground font-mono">http://localhost:3001</p>
+              </div>
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => window.open("http://localhost:3001", "_blank")}>
+                Visit Site <ExternalLink className="h-3 w-3 ml-1" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

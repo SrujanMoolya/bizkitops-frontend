@@ -151,8 +151,13 @@ export function DealerListings({ dealerId, onAddVehicle, onEditVehicle }: Dealer
                         >
                           <Edit className="h-3 w-3" /> Edit
                         </Button>
-                        <Button variant="outline" size="sm" className="gap-1 text-xs h-8">
-                          <ImagePlus className="h-3 w-3" /> Photos
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1 text-xs h-8 border-primary/40 text-primary hover:bg-primary/5"
+                          onClick={() => window.open(`http://localhost:3000/vehicle/${v.id}`, "_blank")}
+                        >
+                          <Eye className="h-3 w-3" /> View Listing
                         </Button>
                         <Button
                           variant="outline"
