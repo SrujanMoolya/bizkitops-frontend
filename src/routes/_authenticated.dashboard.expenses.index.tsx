@@ -42,7 +42,13 @@ import {
   Download,
   TrendingDown,
   CreditCard,
-  Tag
+  Tag,
+  Camera,
+  UploadCloud,
+  ImageIcon,
+  Eye,
+  Paperclip,
+  Hash,
 } from "lucide-react";
 import { PageHeader, EmptyState } from "@/components/dashboard/page-shell";
 import { formatINR, formatDate } from "@/lib/format";
@@ -100,6 +106,8 @@ function ExpensesPage() {
   const { data } = useSuspenseQuery(expensesOptions);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
+  const [viewingExpense, setViewingExpense] = useState<Expense | null>(null);
+  const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null);
   
   // Search & filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -149,6 +157,7 @@ function ExpensesPage() {
       const matchSearch =
         e.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         e.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        e.reference_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         e.category.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchCat = categoryFilter === "all" || e.category === categoryFilter;
@@ -163,12 +172,13 @@ function ExpensesPage() {
       toast.error("No expenses to export");
       return;
     }
-    const headers = ["Date", "Category", "Description", "Payment Method", "Amount", "Notes"];
+    const headers = ["Date", "Category", "Description", "Payment Method", "Txn ID / Ref", "Amount", "Notes"];
     const rows = data.expenses.map((e) => [
       e.expense_date,
       e.category,
       e.description || "",
       e.payment_method,
+      e.reference_number || "",
       e.amount,
       e.notes || "",
     ]);
@@ -249,7 +259,7 @@ function ExpensesPage() {
                 <div className="relative flex-1 min-w-[200px]">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by description or notes..."
+                    placeholder="Search description, notes, or Txn ID..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9 pr-8 bg-card"
@@ -322,7 +332,7 @@ function ExpensesPage() {
                         <TableHead>Description</TableHead>
                         <TableHead>Payment Method</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="w-24 text-right">Actions</TableHead>
+                        <TableHead className="w-28 text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -334,16 +344,31 @@ function ExpensesPage() {
                               <Tag className="h-2.5 w-2.5 mr-1" /> {e.category}
                             </Badge>
                           </TableCell>
-                          <TableCell className="max-w-[180px] truncate">
-                            <span className="font-medium text-foreground text-xs">{e.description || "—"}</span>
+                          <TableCell className="max-w-[200px]">
+                            <span className="font-medium text-foreground text-xs block truncate">{e.description || "—"}</span>
                             {e.notes && (
                               <div className="text-[10px] text-muted-foreground truncate">{e.notes}</div>
+                            )}
+                            {e.receipt_url && (
+                              <button
+                                type="button"
+                                onClick={() => setSelectedReceipt(e.receipt_url!)}
+                                className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline"
+                              >
+                                <ImageIcon className="h-3 w-3" /> View Receipt Photo
+                              </button>
                             )}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className={`capitalize font-semibold text-[10px] ${getPaymentMethodBadgeClass(e.payment_method)}`}>
                               <CreditCard className="h-2.5 w-2.5 mr-1" /> {e.payment_method.replace("_", " ")}
                             </Badge>
+                            {e.reference_number && (
+                              <div className="text-[10px] text-muted-foreground font-mono mt-1 flex items-center gap-1">
+                                <Hash className="h-2.5 w-2.5 shrink-0 text-primary" />
+                                <span className="truncate max-w-[110px]" title={e.reference_number}>{e.reference_number}</span>
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell className="text-right font-black text-rose-600 dark:text-rose-400">
                             {formatINR(e.amount)}
@@ -353,10 +378,19 @@ function ExpensesPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                onClick={() => setViewingExpense(e)}
+                                title="View expense details"
+                              >
+                                <Eye className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => {
                                   setEditing(e);
                                   setOpen(true);
                                 }}
+                                title="Edit expense"
                               >
                                 <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                               </Button>
@@ -431,6 +465,43 @@ function ExpensesPage() {
         expense={editing}
         categories={data.categories.map((c) => c.name)}
       />
+
+      {/* Expense Voucher Details Viewing Modal */}
+      <ExpenseViewDialog
+        expense={viewingExpense}
+        onClose={() => setViewingExpense(null)}
+        onEdit={() => {
+          setEditing(viewingExpense);
+          setOpen(true);
+          setViewingExpense(null);
+        }}
+        onViewReceipt={(url) => setSelectedReceipt(url)}
+      />
+
+      {/* Full Size Receipt Viewer Dialog */}
+      <Dialog open={!!selectedReceipt} onOpenChange={() => setSelectedReceipt(null)}>
+        <DialogContent className="max-w-lg p-4">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-primary" /> Attached Expense Receipt
+            </DialogTitle>
+          </DialogHeader>
+          {selectedReceipt && (
+            <div className="space-y-3 pt-2">
+              <div className="rounded-lg border border-border overflow-hidden bg-black/5 dark:bg-black/40 flex justify-center items-center max-h-[70vh] p-2">
+                <img src={selectedReceipt} alt="Expense receipt" className="max-h-[65vh] object-contain rounded" />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button asChild variant="outline" size="sm" className="text-xs">
+                  <a href={selectedReceipt} download="Expense_Receipt.png" target="_blank" rel="noreferrer">
+                    <Download className="h-3.5 w-3.5 mr-1" /> Download Image
+                  </a>
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -479,6 +550,8 @@ function ExpenseDialog({
   const save = useServerFn(upsertExpense);
   const [category, setCategory] = useState(expense?.category ?? categories[0] ?? "Misc");
   const [paymentMethod, setPaymentMethod] = useState(expense?.payment_method ?? "cash");
+  const [referenceNumber, setReferenceNumber] = useState(expense?.reference_number ?? "");
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(expense?.receipt_url ?? null);
 
   const m = useMutation({
     mutationFn: save,
@@ -489,6 +562,36 @@ function ExpenseDialog({
     },
     onError: (e) => toast.error((e as Error).message),
   });
+
+  const getRefPlaceholder = (method: string) => {
+    switch (method) {
+      case "upi":
+        return "e.g. UPI/123456789012 or UTR Ref";
+      case "card":
+        return "e.g. Card TXN ID / Approval Code";
+      case "bank_transfer":
+        return "e.g. NEFT / RTGS Ref No.";
+      case "cheque":
+        return "e.g. Cheque No. 000123";
+      default:
+        return "e.g. Transaction Ref / Slip No.";
+    }
+  };
+
+  const handleReceiptUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error("File size must be under 3MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setReceiptUrl(reader.result as string);
+      toast.success("Receipt photo attached!");
+    };
+    reader.readAsDataURL(file);
+  };
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -501,6 +604,8 @@ function ExpenseDialog({
         description: String(f.get("description") ?? ""),
         expense_date: String(f.get("expense_date") ?? new Date().toISOString().slice(0, 10)),
         payment_method: paymentMethod,
+        reference_number: referenceNumber.trim(),
+        receipt_url: receiptUrl,
         notes: String(f.get("notes") ?? ""),
       },
     });
@@ -566,6 +671,25 @@ function ExpenseDialog({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Dynamic Transaction ID / Reference Number input */}
+            {paymentMethod !== "cash" && (
+              <div className="col-span-2 space-y-1.5 bg-muted/20 p-2.5 rounded-lg border border-border/60">
+                <Label htmlFor="reference_number" className="flex items-center gap-1.5 text-xs font-semibold">
+                  <Hash className="h-3.5 w-3.5 text-primary" />
+                  <span>Transaction ID / Ref No.</span>
+                </Label>
+                <Input
+                  id="reference_number"
+                  name="reference_number"
+                  placeholder={getRefPlaceholder(paymentMethod)}
+                  value={referenceNumber}
+                  onChange={(e) => setReferenceNumber(e.target.value)}
+                  className="bg-card text-xs"
+                />
+              </div>
+            )}
+
             <div className="col-span-2 space-y-1.5">
               <Label htmlFor="description">Description</Label>
               <Input
@@ -574,6 +698,42 @@ function ExpenseDialog({
                 defaultValue={expense?.description ?? ""}
               />
             </div>
+
+            {/* Receipt Photo / Screenshot upload */}
+            <div className="col-span-2 space-y-1.5">
+              <Label className="flex items-center justify-between text-xs font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <Paperclip className="h-3.5 w-3.5 text-primary" />
+                  <span>Invoice Photo / Receipt Screenshot</span>
+                </span>
+                {receiptUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setReceiptUrl(null)}
+                    className="text-[11px] text-rose-500 hover:underline flex items-center gap-1"
+                  >
+                    <X className="h-3 w-3" /> Remove
+                  </button>
+                )}
+              </Label>
+              {receiptUrl ? (
+                <div className="relative group rounded-lg border border-border overflow-hidden bg-muted/30 p-2 flex items-center gap-3">
+                  <img src={receiptUrl} alt="Receipt preview" className="h-14 w-14 object-cover rounded border border-border shrink-0" />
+                  <div className="flex-1 text-xs">
+                    <p className="font-semibold text-foreground">Attached Receipt Photo</p>
+                    <p className="text-[10px] text-muted-foreground">Will be saved with this expense record</p>
+                  </div>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center border border-dashed border-border rounded-lg p-3 cursor-pointer hover:bg-accent/40 transition-colors">
+                  <UploadCloud className="h-5 w-5 text-muted-foreground mb-1" />
+                  <span className="text-xs font-medium text-foreground">Attach receipt image or payment screenshot</span>
+                  <span className="text-[10px] text-muted-foreground">PNG, JPG, WEBP up to 3MB</span>
+                  <input type="file" accept="image/*" onChange={handleReceiptUpload} className="hidden" />
+                </label>
+              )}
+            </div>
+
             <div className="col-span-2 space-y-1.5">
               <Label htmlFor="notes">Notes</Label>
               <Textarea id="notes" name="notes" rows={2} defaultValue={expense?.notes ?? ""} />
@@ -588,6 +748,108 @@ function ExpenseDialog({
             </Button>
           </DialogFooter>
         </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ExpenseViewDialog({
+  expense,
+  onClose,
+  onEdit,
+  onViewReceipt,
+}: {
+  expense: Expense | null;
+  onClose: () => void;
+  onEdit: () => void;
+  onViewReceipt: (url: string) => void;
+}) {
+  if (!expense) return null;
+
+  return (
+    <Dialog open={!!expense} onOpenChange={() => onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <div className="flex items-center justify-between gap-2 pr-6">
+            <DialogTitle className="text-base font-bold flex items-center gap-2">
+              <Eye className="h-4 w-4 text-primary" /> Expense Voucher Details
+            </DialogTitle>
+            <Badge variant="outline" className={`font-semibold capitalize text-[10px] ${getCategoryBadgeClass(expense.category)}`}>
+              <Tag className="h-2.5 w-2.5 mr-1" /> {expense.category}
+            </Badge>
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          {/* Big Amount Card */}
+          <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4 text-center">
+            <p className="text-xs uppercase font-bold text-muted-foreground tracking-wider mb-0.5">Voucher Amount</p>
+            <p className="text-3xl font-display font-black text-rose-600 dark:text-rose-400">{formatINR(expense.amount)}</p>
+            <p className="text-xs text-muted-foreground mt-1 font-mono">{formatDate(expense.expense_date)}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="space-y-1 p-2.5 rounded-lg bg-muted/30 border border-border/60">
+              <span className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider block">Payment Method</span>
+              <Badge variant="outline" className={`capitalize font-semibold text-[10px] mt-1 ${getPaymentMethodBadgeClass(expense.payment_method)}`}>
+                <CreditCard className="h-2.5 w-2.5 mr-1" /> {expense.payment_method.replace("_", " ")}
+              </Badge>
+            </div>
+
+            <div className="space-y-1 p-2.5 rounded-lg bg-muted/30 border border-border/60">
+              <span className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider block">Transaction ID / Ref</span>
+              {expense.reference_number ? (
+                <span className="font-mono font-semibold text-foreground text-xs block truncate mt-1" title={expense.reference_number}>
+                  #{expense.reference_number}
+                </span>
+              ) : (
+                <span className="text-muted-foreground italic text-xs mt-1 block">None provided</span>
+              )}
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-1 p-3 rounded-lg bg-muted/20 border border-border/60 text-xs">
+            <span className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider block">Description</span>
+            <p className="font-medium text-foreground text-xs">{expense.description || "No description specified."}</p>
+          </div>
+
+          {/* Notes */}
+          {expense.notes && (
+            <div className="space-y-1 p-3 rounded-lg bg-muted/20 border border-border/60 text-xs">
+              <span className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider block">Notes</span>
+              <p className="text-muted-foreground text-xs whitespace-pre-wrap">{expense.notes}</p>
+            </div>
+          )}
+
+          {/* Attached Receipt Image */}
+          {expense.receipt_url && (
+            <div className="space-y-1.5 pt-1">
+              <span className="text-muted-foreground text-[10px] uppercase font-bold tracking-wider block">Attached Invoice / Receipt</span>
+              <div
+                onClick={() => onViewReceipt(expense.receipt_url!)}
+                className="group relative cursor-pointer rounded-lg border border-border overflow-hidden bg-muted/40 p-2 flex items-center gap-3 hover:border-primary/50 transition-colors"
+              >
+                <img src={expense.receipt_url} alt="Receipt thumbnail" className="h-14 w-14 object-cover rounded border border-border shrink-0" />
+                <div className="flex-1 text-xs">
+                  <p className="font-semibold text-foreground flex items-center gap-1 group-hover:text-primary transition-colors">
+                    <ImageIcon className="h-3.5 w-3.5" /> View Full Receipt Photo
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">Click to inspect full resolution image</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={onEdit} className="gap-1.5 text-xs">
+            <Pencil className="h-3.5 w-3.5" /> Edit Expense
+          </Button>
+          <Button size="sm" onClick={onClose} className="text-xs">
+            Close
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

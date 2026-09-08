@@ -45,7 +45,19 @@ async function request(path: string, options: RequestOptions = {}) {
   }
 
   if (!response.ok) {
-    const errorMsg = json?.error || text || `Request failed with status ${response.status}`;
+    let errorMsg = json?.error || text || `Request failed with status ${response.status}`;
+    if (typeof errorMsg === "string" && errorMsg.trim().startsWith("[")) {
+      try {
+        const parsed = JSON.parse(errorMsg);
+        if (Array.isArray(parsed) && parsed[0]?.message) {
+          errorMsg = parsed
+            .map((i: any) => (i.path?.length ? `${i.path.join(".")}: ${i.message}` : i.message))
+            .join("; ");
+        }
+      } catch {
+        // ignore
+      }
+    }
     throw new Error(errorMsg);
   }
 

@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/dashboard/page-shell";
 import { toast } from "sonner";
-import { Loader2, MessageSquare, Plus, RefreshCw, Send, AlertCircle, HelpCircle } from "lucide-react";
+import { Loader2, MessageSquare, Plus, RefreshCw, Send, AlertCircle, HelpCircle, Phone, MessageCircle, Headphones, ExternalLink } from "lucide-react";
 import { RoutePending, RouteError } from "@/components/dashboard/page-shell";
 import { getSupportTickets, createSupportTicket } from "@/lib/support.functions";
 
@@ -79,17 +79,39 @@ function SupportPage() {
       queryClient.invalidateQueries({ queryKey: ["support-tickets"] });
     },
     onError: (err) => {
-      toast.error((err as Error).message || "Failed to raise support ticket");
+      let message = (err as Error).message || "Failed to raise support ticket";
+      if (typeof message === "string" && message.trim().startsWith("[")) {
+        try {
+          const parsed = JSON.parse(message);
+          if (Array.isArray(parsed) && parsed[0]?.message) {
+            message = parsed
+              .map((i: any) => (i.path?.length ? `${i.path.join(".")}: ${i.message}` : i.message))
+              .join("; ");
+          }
+        } catch {}
+      }
+      toast.error(message);
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subject.trim() || !description.trim()) {
-      toast.error("Please fill in all fields.");
+    const cleanSubject = subject.trim();
+    const cleanDescription = description.trim();
+
+    if (!cleanSubject || !cleanDescription) {
+      toast.error("Please fill in all required fields.");
       return;
     }
-    createMutation.mutate({ subject, description, category, priority });
+    if (cleanSubject.length < 3) {
+      toast.error("Subject must be at least 3 characters long.");
+      return;
+    }
+    if (cleanDescription.length < 10) {
+      toast.error("Detailed description must be at least 10 characters long.");
+      return;
+    }
+    createMutation.mutate({ subject: cleanSubject, description: cleanDescription, category, priority });
   };
 
   const getStatusBadgeColor = (status: string) => {
@@ -126,16 +148,27 @@ function SupportPage() {
     <div className="space-y-6 max-w-5xl">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <PageHeader
-          title="Support Tickets"
-          description="Contact platform support or raise technical/billing queries."
+          title="Help & Support"
+          description="Contact platform support via WhatsApp, Call, or raise technical/billing tickets."
         />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-9 gap-1.5 font-semibold shadow-sm">
+            <a href="https://wa.me/917899535703?text=Hi%20BizkitOps%20Support,%20I%20need%20assistance%20with%20my%20account." target="_blank" rel="noreferrer">
+              <MessageCircle className="h-4 w-4 fill-emerald-500/20" /> WhatsApp
+            </a>
+          </Button>
+          <Button asChild size="sm" variant="outline" className="border-blue-500/40 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 text-xs h-9 gap-1.5 font-semibold">
+            <a href="tel:+917899535703">
+              <Phone className="h-4 w-4" /> Call 7899535703
+            </a>
+          </Button>
           <Button
             variant="outline"
             size="icon"
             onClick={() => refetch()}
             disabled={isLoading || isRefetching}
             className="h-9 w-9 shrink-0"
+            title="Refresh tickets"
           >
             <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
           </Button>
@@ -143,7 +176,7 @@ function SupportPage() {
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2 h-9 text-xs font-semibold">
-                <Plus className="h-4 w-4" /> Raise Support Ticket
+                <Plus className="h-4 w-4" /> Raise Ticket
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
@@ -185,7 +218,12 @@ function SupportPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="subject">Subject</Label>
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="subject">Subject</Label>
+                    <span className={`text-[11px] ${subject.trim().length > 0 && subject.trim().length < 3 ? "text-rose-500 font-medium" : "text-muted-foreground"}`}>
+                      Min 3 chars
+                    </span>
+                  </div>
                   <Input
                     id="subject"
                     placeholder="Brief summary of the issue"
@@ -196,10 +234,15 @@ function SupportPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="description">Detailed Description</Label>
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="description">Detailed Description</Label>
+                    <span className={`text-[11px] ${description.trim().length > 0 && description.trim().length < 10 ? "text-rose-500 font-medium" : "text-muted-foreground"}`}>
+                      {description.trim().length}/10 chars min
+                    </span>
+                  </div>
                   <Textarea
                     id="description"
-                    placeholder="Explain the issue with relevant details..."
+                    placeholder="Explain the issue with relevant details (at least 10 characters)..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
@@ -219,6 +262,61 @@ function SupportPage() {
             </DialogContent>
           </Dialog>
         </div>
+      </div>
+
+      {/* Quick Support Channels Banner */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* WhatsApp Card */}
+        <Card className="border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <MessageCircle className="h-5 w-5 fill-emerald-500/20" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-foreground">WhatsApp Chat</p>
+              <p className="text-[11px] text-muted-foreground truncate">+91 7899535703</p>
+            </div>
+            <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs h-8 gap-1 shadow-xs">
+              <a href="https://wa.me/917899535703?text=Hi%20BizkitOps%20Support,%20I%20need%20assistance%20with%20my%20account." target="_blank" rel="noreferrer">
+                Chat <ExternalLink className="h-3 w-3" />
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Direct Call Card */}
+        <Card className="border border-blue-500/30 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <Phone className="h-5 w-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-foreground">Direct Call</p>
+              <p className="text-[11px] text-muted-foreground truncate">+91 7899535703</p>
+            </div>
+            <Button asChild size="sm" variant="outline" className="border-blue-500/40 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 text-xs h-8 gap-1">
+              <a href="tel:+917899535703">
+                Call <Phone className="h-3 w-3" />
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Ticket Support Card */}
+        <Card className="border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-transparent to-transparent shadow-sm">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <Headphones className="h-5 w-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-foreground">Ticket Support</p>
+              <p className="text-[11px] text-muted-foreground truncate">Superadmin responses</p>
+            </div>
+            <Button size="sm" onClick={() => setCreateOpen(true)} className="text-xs h-8 gap-1 bg-primary text-primary-foreground shadow-xs">
+              <Plus className="h-3.5 w-3.5" /> Ticket
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       {isLoading ? (
