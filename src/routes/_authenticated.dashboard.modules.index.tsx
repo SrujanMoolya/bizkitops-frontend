@@ -274,16 +274,20 @@ function ModulesPage() {
         </div>
       )}
 
-      <div>
-        <div className="flex items-center justify-between gap-4 mb-4">
-          <h3 className="text-lg font-bold">Available Modules</h3>
+      {/* Core Business Modules */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold">Core Modules</h3>
+            <p className="text-xs text-muted-foreground">Essential management tools for all businesses.</p>
+          </div>
           <Button asChild variant="link" size="sm" className="h-auto p-0 font-semibold text-primary">
             <Link to="/dashboard/billing">View plan details table</Link>
           </Button>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {MODULES.map((mod) => {
+          {MODULES.filter((mod) => !mod.isSpecial).map((mod) => {
             const Icon = ICONS[mod.icon] ?? Package;
             const allowed = canAccessModule(plan, mod.key, bizData.business?.trial_ends_at);
             const enabled = enabledSet.get(mod.key) ?? false;
@@ -296,6 +300,79 @@ function ModulesPage() {
                   <div className="flex-1">
                     <CardTitle className="text-base flex items-center gap-2">
                       {mod.name}
+                      {!allowed && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
+                    </CardTitle>
+                    <CardDescription className="text-xs">{mod.category}</CardDescription>
+                  </div>
+                  <Switch
+                    checked={enabled}
+                    disabled={!allowed || m.isPending}
+                    onCheckedChange={(v) => {
+                      m.mutate(
+                        { data: { module_key: mod.key, enabled: v } },
+                        {
+                          onSuccess: () =>
+                            toast.success(v ? `${mod.name} enabled` : `${mod.name} disabled`),
+                        },
+                      );
+                    }}
+                  />
+                </CardHeader>
+                <CardContent className="pb-4">
+                  <p className="text-xs text-muted-foreground leading-normal">{mod.description}</p>
+                  {!allowed && (
+                    <div className="mt-3 flex items-center justify-between">
+                      <Badge variant="outline" className="capitalize text-[10px]">
+                        Requires {mod.minPlan}
+                      </Badge>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={() => handleUpgrade(mod.minPlan as "basic" | "pro", billingCycle, billingCycle === "monthly" ? (mod.minPlan === "pro" ? 1499 : 499) : (mod.minPlan === "pro" ? 14210 : 4730))}
+                        className="h-auto p-0 text-primary text-xs flex items-center gap-0.5 font-semibold"
+                      >
+                        Upgrade <ChevronRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Specialized Industry Modules */}
+      <div className="space-y-4 pt-4 border-t border-border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold">Specialized Industry Modules</h3>
+              <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px] gap-1 font-semibold">
+                <Sparkles className="h-3 w-3 fill-amber-500" /> Industry Specific
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Tailored niche extensions for specialized business operations.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {MODULES.filter((mod) => mod.isSpecial).map((mod) => {
+            const Icon = ICONS[mod.icon] ?? Package;
+            const allowed = canAccessModule(plan, mod.key, bizData.business?.trial_ends_at);
+            const enabled = enabledSet.get(mod.key) ?? false;
+            return (
+              <Card key={mod.key} className={`border-amber-500/30 bg-gradient-to-b from-amber-500/5 via-transparent to-transparent ${!allowed ? "opacity-75 relative" : ""}`}>
+                <CardHeader className="flex flex-row items-start gap-3 space-y-0 pb-3">
+                  <div className="h-10 w-10 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      {mod.name}
+                      <span className="bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[9px] font-bold px-1.5 py-0.5 rounded">Special</span>
                       {!allowed && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
                     </CardTitle>
                     <CardDescription className="text-xs">{mod.category}</CardDescription>

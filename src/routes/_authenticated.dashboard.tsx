@@ -57,7 +57,12 @@ import {
   HelpCircle,
   LucideIcon,
   Car,
+  Pin,
+  PinOff,
+  Sparkles,
 } from "lucide-react";
+import { usePinnedTabs } from "@/hooks/use-pinned-tabs";
+import { TabsBar } from "@/components/dashboard/tabs-bar";
 import { differenceInDays, parseISO } from "date-fns";
 import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -109,7 +114,7 @@ const NAV = [
   { to: "/dashboard/permissions", label: "Access Control", icon: Key, adminOnly: true },
   { to: "/dashboard/reports", label: "Reports", icon: BarChart3 },
   { to: "/dashboard/website", label: "Website", icon: Globe },
-  { to: "/dashboard/dealership", label: "Dealership", icon: Car },
+  { to: "/dashboard/dealership", label: "Dealership", icon: Car, isSpecial: true },
   { to: "/dashboard/modules", label: "Module Store", icon: Store },
   { to: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { to: "/dashboard/support", label: "Help & Support", icon: HelpCircle },
@@ -249,6 +254,16 @@ function DashboardLayout() {
     ? (activeModules.get(activeRouteModuleKey) ?? false)
     : true;
 
+  const {
+    pinnedTabs,
+    openTabs,
+    isPinned,
+    togglePin,
+    closeTab,
+    closeOtherTabs,
+    closeAllUnpinnedTabs,
+  } = usePinnedTabs(currentPath);
+
   // Filter NAV items based on current role permissions
   const filteredNav = NAV.filter((item) => {
     if (item.adminOnly && userRole !== "owner" && userRole !== "admin") {
@@ -257,6 +272,10 @@ function DashboardLayout() {
     if (userRole === "owner") return true;
     return allowedRoutes.some((route) => item.to === route || item.to.startsWith(route + "/"));
   });
+
+  const coreNavItems = filteredNav.filter((item) => !item.isSpecial);
+  const specialNavItems = filteredNav.filter((item) => item.isSpecial);
+  const pinnedNavItems = filteredNav.filter((item) => isPinned(item.to));
 
   return (
     <SidebarProvider>
@@ -273,23 +292,80 @@ function DashboardLayout() {
           </Link>
         </SidebarHeader>
         <SidebarContent>
+          {pinnedNavItems.length > 0 && (
+            <SidebarGroup>
+              <SidebarGroupLabel className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                <Pin className="h-3 w-3 fill-primary/30" />
+                <span>Pinned</span>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {pinnedNavItems.map((item) => {
+                    const mKey = MODULE_KEYS[item.to];
+                    const mActive = mKey ? (activeModules.get(mKey) ?? false) : true;
+                    const showSupportBadge = item.to === "/dashboard/support" && hasUnreadResponse;
+
+                    return (
+                      <SidebarMenuItem key={`pinned-${item.to}`} className="group/item relative">
+                        <SidebarMenuButton asChild tooltip={item.label}>
+                          <Link
+                            to={item.to}
+                            activeOptions={{ exact: !!item.exact }}
+                            activeProps={{ "data-active": "true" } as never}
+                            className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground flex items-center justify-between w-full pr-7"
+                          >
+                            <span className="flex items-center gap-2">
+                              <item.icon className="h-4 w-4" />
+                              <span>{item.label}</span>
+                              {showSupportBadge && (
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                                </span>
+                              )}
+                            </span>
+                            {!mActive && (
+                              <Lock className="h-3 w-3 text-muted-foreground opacity-60" />
+                            )}
+                          </Link>
+                        </SidebarMenuButton>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            togglePin(item.to);
+                          }}
+                          title="Unpin tab"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded opacity-0 group-hover/item:opacity-100 hover:bg-accent text-muted-foreground hover:text-foreground transition-opacity z-10"
+                        >
+                          <PinOff className="h-3 w-3" />
+                        </button>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
+
           <SidebarGroup>
             <SidebarGroupLabel>Manage</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {filteredNav.map((item) => {
+                {coreNavItems.map((item) => {
                   const mKey = MODULE_KEYS[item.to];
                   const mActive = mKey ? (activeModules.get(mKey) ?? false) : true;
                   const showSupportBadge = item.to === "/dashboard/support" && hasUnreadResponse;
+                  const itemPinned = isPinned(item.to);
 
                   return (
-                    <SidebarMenuItem key={item.to}>
+                    <SidebarMenuItem key={item.to} className="group/item relative">
                       <SidebarMenuButton asChild tooltip={item.label}>
                         <Link
                           to={item.to}
                           activeOptions={{ exact: !!item.exact }}
                           activeProps={{ "data-active": "true" } as never}
-                          className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground flex items-center justify-between w-full"
+                          className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground flex items-center justify-between w-full pr-7"
                         >
                           <span className="flex items-center gap-2">
                             <item.icon className="h-4 w-4" />
@@ -306,12 +382,96 @@ function DashboardLayout() {
                           )}
                         </Link>
                       </SidebarMenuButton>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          togglePin(item.to);
+                        }}
+                        title={itemPinned ? "Unpin tab" : "Pin tab"}
+                        className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-opacity z-10 ${
+                          itemPinned
+                            ? "opacity-100 text-primary"
+                            : "opacity-0 group-hover/item:opacity-100"
+                        }`}
+                      >
+                        {itemPinned ? (
+                          <Pin className="h-3 w-3 fill-primary/30" />
+                        ) : (
+                          <Pin className="h-3 w-3" />
+                        )}
+                      </button>
                     </SidebarMenuItem>
                   );
                 })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+
+          {specialNavItems.length > 0 && (
+            <SidebarGroup>
+              <SidebarGroupLabel className="flex items-center gap-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
+                <Sparkles className="h-3 w-3 fill-amber-500/30" />
+                <span>Specialized Modules</span>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {specialNavItems.map((item) => {
+                    const mKey = MODULE_KEYS[item.to];
+                    const mActive = mKey ? (activeModules.get(mKey) ?? false) : true;
+                    const showSupportBadge = item.to === "/dashboard/support" && hasUnreadResponse;
+                    const itemPinned = isPinned(item.to);
+
+                    return (
+                      <SidebarMenuItem key={item.to} className="group/item relative">
+                        <SidebarMenuButton asChild tooltip={item.label}>
+                          <Link
+                            to={item.to}
+                            activeOptions={{ exact: !!item.exact }}
+                            activeProps={{ "data-active": "true" } as never}
+                            className="data-[active=true]:bg-amber-500/15 data-[active=true]:text-amber-700 dark:data-[active=true]:text-amber-300 flex items-center justify-between w-full pr-7"
+                          >
+                            <span className="flex items-center gap-2">
+                              <item.icon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                              <span>{item.label}</span>
+                              {showSupportBadge && (
+                                <span className="relative flex h-2 w-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                                </span>
+                              )}
+                            </span>
+                            {!mActive && (
+                              <Lock className="h-3 w-3 text-muted-foreground opacity-60" />
+                            )}
+                          </Link>
+                        </SidebarMenuButton>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            togglePin(item.to);
+                          }}
+                          title={itemPinned ? "Unpin tab" : "Pin tab"}
+                          className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-opacity z-10 ${
+                            itemPinned
+                              ? "opacity-100 text-primary"
+                              : "opacity-0 group-hover/item:opacity-100"
+                          }`}
+                        >
+                          {itemPinned ? (
+                            <Pin className="h-3 w-3 fill-primary/30" />
+                          ) : (
+                            <Pin className="h-3 w-3" />
+                          )}
+                        </button>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
         </SidebarContent>
         <SidebarFooter>
           {trialDays !== null && (
@@ -374,6 +534,17 @@ function DashboardLayout() {
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
+        <TabsBar
+          navItems={filteredNav}
+          openTabs={openTabs}
+          pinnedTabs={pinnedTabs}
+          currentPath={currentPath}
+          isPinned={isPinned}
+          togglePin={togglePin}
+          closeTab={closeTab}
+          closeOtherTabs={closeOtherTabs}
+          closeAllUnpinnedTabs={closeAllUnpinnedTabs}
+        />
         <div className="p-4 md:p-6">
           {!isModuleActive ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">

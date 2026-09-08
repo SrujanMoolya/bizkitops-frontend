@@ -18,6 +18,7 @@ export interface ModuleMeta {
   minPlan: PlanKey;
   icon: string; // lucide icon name
   category: "Finance" | "Operations" | "Sales" | "HR" | "Marketing";
+  isSpecial?: boolean;
 }
 
 export const MODULES: ModuleMeta[] = [
@@ -92,6 +93,7 @@ export const MODULES: ModuleMeta[] = [
     minPlan: "pro",
     icon: "Car",
     category: "Operations",
+    isSpecial: true,
   },
 ];
 
