@@ -44,6 +44,23 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
   const [showAddPhotoOption, setShowAddPhotoOption] = useState(false);
   const [photoUrl, setPhotoUrl] = useState("");
 
+  const [customBrands, setCustomBrands] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = localStorage.getItem("bizkitops_custom_brands");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const baseBrands = form.type === "car" ? carBrands : bikeBrands;
+  const availableBrands = Array.from(new Set([...baseBrands, ...customBrands])).sort();
+
+  const [isCustomBrand, setIsCustomBrand] = useState(() => {
+    return editVehicle?.brand ? !availableBrands.includes(editVehicle.brand) : false;
+  });
+
   const updateField = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) {
@@ -52,6 +69,7 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
   };
 
   const handleTypeChange = (newType: VehicleType) => {
+    setIsCustomBrand(false);
     setForm((prev) => ({
       ...prev,
       type: newType,
@@ -101,6 +119,17 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
 
     setIsSubmitting(true);
     try {
+      const trimmedBrand = form.brand.trim();
+      if (trimmedBrand && !availableBrands.includes(trimmedBrand)) {
+        const updatedCustom = [...customBrands, trimmedBrand];
+        setCustomBrands(updatedCustom);
+        try {
+          localStorage.setItem("bizkitops_custom_brands", JSON.stringify(updatedCustom));
+        } catch (err) {
+          console.error("Failed to save custom brand:", err);
+        }
+      }
+
       const payload = {
         type: form.type,
         brand: form.brand,
@@ -298,19 +327,70 @@ export function AddVehicleForm({ onBack, editVehicle, dealerId }: AddVehicleForm
             </div>
             
             <div>
-              <Label className={`text-xs ${errors.brand ? "text-destructive" : "text-muted-foreground"}`}>
-                Brand * {errors.brand && `(${errors.brand})`}
-              </Label>
-              <Select value={form.brand || undefined} onValueChange={(v) => updateField("brand", v)}>
-                <SelectTrigger className={`mt-1 rounded-xl ${errors.brand ? "border-destructive focus:ring-destructive" : ""}`}>
-                  <SelectValue placeholder="Select brand" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(form.type === "car" ? carBrands : bikeBrands).map((b) => (
-                    <SelectItem key={b} value={b}>{b}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between">
+                <Label className={`text-xs ${errors.brand ? "text-destructive" : "text-muted-foreground"}`}>
+                  Brand * {errors.brand && `(${errors.brand})`}
+                </Label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomBrand(!isCustomBrand);
+                    updateField("brand", "");
+                  }}
+                  className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
+                >
+                  {isCustomBrand ? "← Choose from list" : "+ Add Custom Brand"}
+                </button>
+              </div>
+
+              {isCustomBrand ? (
+                <div className="mt-1 flex gap-2">
+                  <input
+                    type="text"
+                    value={form.brand}
+                    onChange={(e) => updateField("brand", e.target.value)}
+                    placeholder={form.type === "car" ? "e.g. Genesis, Pagani..." : "e.g. Hero, TVS, Benelli..."}
+                    className={`${inputClass} ${errors.brand ? errorInputClass : ""}`}
+                    autoFocus
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-10 rounded-xl text-xs whitespace-nowrap"
+                    onClick={() => {
+                      setIsCustomBrand(false);
+                      updateField("brand", "");
+                    }}
+                  >
+                    List
+                  </Button>
+                </div>
+              ) : (
+                <Select
+                  value={form.brand || undefined}
+                  onValueChange={(v) => {
+                    if (v === "__add_custom__") {
+                      setIsCustomBrand(true);
+                      updateField("brand", "");
+                    } else {
+                      updateField("brand", v);
+                    }
+                  }}
+                >
+                  <SelectTrigger className={`mt-1 rounded-xl ${errors.brand ? "border-destructive focus:ring-destructive" : ""}`}>
+                    <SelectValue placeholder="Select brand" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {availableBrands.map((b) => (
+                      <SelectItem key={b} value={b}>{b}</SelectItem>
+                    ))}
+                    <SelectItem value="__add_custom__" className="text-emerald-600 dark:text-emerald-400 font-semibold border-t border-border mt-1 pt-1">
+                      + Add New Brand...
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div>

@@ -31,8 +31,65 @@ export interface Vehicle {
   createdAt: string;
 }
 
-export const carBrands = ["Porsche", "BMW", "Mercedes-Benz", "Audi", "Lamborghini", "Ferrari", "Aston Martin", "Jaguar", "Land Rover", "Rolls-Royce"];
-export const bikeBrands = ["Ducati", "BMW", "Kawasaki", "Yamaha", "Suzuki", "Honda", "Aprilia", "Triumph", "KTM"];
+export const carBrands = [
+  "Porsche",
+  "BMW",
+  "Mercedes-Benz",
+  "Audi",
+  "Lamborghini",
+  "Ferrari",
+  "Aston Martin",
+  "Jaguar",
+  "Land Rover",
+  "Rolls-Royce",
+  "Bentley",
+  "Maserati",
+  "Bugatti",
+  "McLaren",
+  "Tesla",
+  "Toyota",
+  "Hyundai",
+  "Tata",
+  "Mahindra",
+  "Kia",
+  "Honda",
+  "Volkswagen",
+  "Skoda",
+  "MG",
+  "Nissan",
+  "Ford",
+];
+
+export const bikeBrands = [
+  "Royal Enfield",
+  "Harley-Davidson",
+  "Ducati",
+  "BMW",
+  "Kawasaki",
+  "Yamaha",
+  "Suzuki",
+  "Honda",
+  "TVS",
+  "Bajaj",
+  "Hero",
+  "KTM",
+  "Triumph",
+  "Aprilia",
+  "MV Agusta",
+  "Benelli",
+  "Husqvarna",
+  "Indian Motorcycle",
+  "Moto Guzzi",
+  "Norton",
+  "Bimota",
+  "Hyosung",
+  "Jawa",
+  "Yezdi",
+  "Ather",
+  "Ola Electric",
+  "Revolt",
+  "Ultraviolette",
+];
 
 export const locations = ["Bangalore", "Mumbai", "Delhi", "Hyderabad", "Pune"];
 

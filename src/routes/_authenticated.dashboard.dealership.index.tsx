@@ -3,6 +3,8 @@ import { useBusiness } from "@/hooks/use-business";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/dashboard/page-shell";
+import { IndustryNoticeBanner } from "@/components/dashboard/IndustryNoticeBanner";
+import { SPECIALIZED_INDUSTRIES } from "@/lib/industry-config";
 
 import { DashboardOverview } from "@/components/dealership/DashboardOverview";
 import { DealerListings } from "@/components/dealership/DealerListings";
@@ -52,6 +54,15 @@ function DealershipPage() {
       <PageHeader
         title="Dealership Module"
         description="Manage your inventory, leads and dealership settings."
+      />
+
+      <IndustryNoticeBanner
+        title="Spare Parts & General Stock"
+        message={SPECIALIZED_INDUSTRIES.dealership.notices.specialInventoryBanner}
+        actionText="Go to General Inventory"
+        actionHref="/dashboard/inventory"
+        storageKey="dealership_general_inventory"
+        colorTheme="amber"
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

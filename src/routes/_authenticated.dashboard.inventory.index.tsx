@@ -29,6 +29,8 @@ import { PageHeader, EmptyState } from "@/components/dashboard/page-shell";
 import { formatINR } from "@/lib/format";
 import { toast } from "sonner";
 import { RoutePending, RouteError } from "@/components/dashboard/page-shell";
+import { useActiveIndustryMeta } from "@/lib/industry-config";
+import { IndustryNoticeBanner } from "@/components/dashboard/IndustryNoticeBanner";
 
 const inventoryOptions = queryOptions({
   queryKey: ["inventory"],
@@ -47,6 +49,7 @@ type Item = Awaited<ReturnType<typeof listInventory>>[number];
 
 function InventoryPage() {
   const { data } = useSuspenseQuery(inventoryOptions);
+  const activeIndustry = useActiveIndustryMeta();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Item | null>(null);
   const [query, setQuery] = useState("");
@@ -60,8 +63,8 @@ function InventoryPage() {
   return (
     <div>
       <PageHeader
-        title="Inventory"
-        description="Keep stock accurate. Get alerted before you run out."
+        title={activeIndustry ? activeIndustry.coreInventoryLabel : "Inventory"}
+        description={activeIndustry ? activeIndustry.coreInventorySubtitle : "Keep stock accurate. Get alerted before you run out."}
         action={
           <Button
             onClick={() => {
@@ -74,6 +77,17 @@ function InventoryPage() {
           </Button>
         }
       />
+
+      {activeIndustry && (
+        <IndustryNoticeBanner
+          title={`${activeIndustry.name} Active`}
+          message={activeIndustry.notices.coreInventoryBanner}
+          actionText={`Go to ${activeIndustry.specialInventoryName}`}
+          actionHref={`/dashboard/${activeIndustry.key}`}
+          storageKey={`inventory_${activeIndustry.key}`}
+          colorTheme={activeIndustry.colorClass}
+        />
+      )}
 
       {lowCount > 0 && (
         <Card className="mb-4 border-destructive/40 bg-destructive/5">

@@ -115,7 +115,11 @@ function AppointmentsPage() {
       .join(" ")
       .toLowerCase()
       .includes(query.toLowerCase());
-    const matchesStatus = statusFilter === "all" || app.status === statusFilter;
+    const isUpcoming = app.status === "scheduled" || app.status === "confirmed" || app.status === "pending";
+    const matchesStatus =
+      statusFilter === "all" ||
+      app.status === statusFilter ||
+      (statusFilter === "scheduled" && isUpcoming);
     return matchesSearch && matchesStatus;
   });
 
@@ -287,7 +291,7 @@ function AppointmentsPage() {
 
                     <div className="p-3 border-t bg-muted/20 flex items-center justify-between gap-1">
                       <div className="flex gap-1">
-                        {app.status === "scheduled" && (
+                        {(app.status === "scheduled" || app.status === "confirmed" || app.status === "pending") && (
                           <>
                             <Button
                               variant="outline"
@@ -303,7 +307,7 @@ function AppointmentsPage() {
                               size="icon"
                               className="h-7 w-7 text-rose-500 border-rose-500/20 hover:bg-rose-500/10"
                               onClick={() => changeStatus(app.id, "cancelled")}
-                              title="Cancel Booking"
+                              title="Mark Cancelled"
                             >
                               <XCircle className="h-3.5 w-3.5" />
                             </Button>
@@ -503,6 +507,7 @@ function BookingDialog({
     booking?.service_id ?? "custom",
   );
   const [customServiceName, setCustomServiceName] = useState<string>(booking?.service_name ?? "");
+  const [bookingStatus, setBookingStatus] = useState<string>(booking?.status ?? "confirmed");
 
   const handleCustomerChange = (val: string) => {
     setSelectedCustomerId(val);
@@ -538,7 +543,7 @@ function BookingDialog({
         appointment_date: String(f.get("appointment_date") ?? ""),
         start_time: String(f.get("start_time") ?? ""),
         end_time: String(f.get("end_time") || "") || null,
-        status: String(f.get("status") ?? "scheduled"),
+        status: bookingStatus || "confirmed",
         notes: String(f.get("notes") ?? ""),
       },
     });
@@ -648,12 +653,12 @@ function BookingDialog({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="status">Status</Label>
-                <Select defaultValue={booking?.status ?? "scheduled"} name="status">
+                <Select value={bookingStatus} onValueChange={setBookingStatus}>
                   <SelectTrigger id="status">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="confirmed">Scheduled</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>

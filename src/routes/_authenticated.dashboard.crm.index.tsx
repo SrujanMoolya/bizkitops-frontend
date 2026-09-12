@@ -56,6 +56,8 @@ import { PageHeader, EmptyState } from "@/components/dashboard/page-shell";
 import { toast } from "sonner";
 import { formatINR, formatDate } from "@/lib/format";
 import { RoutePending, RouteError } from "@/components/dashboard/page-shell";
+import { useActiveIndustryMeta } from "@/lib/industry-config";
+import { IndustryNoticeBanner } from "@/components/dashboard/IndustryNoticeBanner";
 
 const STAGES = [
   { key: "Lead", label: "New Lead", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
@@ -154,6 +156,7 @@ interface SpreadsheetRow {
 
 function CRMPage() {
   const { data: leads } = useSuspenseQuery(crmOptions);
+  const activeIndustry = useActiveIndustryMeta();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Lead | null>(null);
@@ -423,8 +426,8 @@ function CRMPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="CRM & Leads"
-        description="Track prospects, prioritize deals, and grow your sales pipeline."
+        title={activeIndustry ? activeIndustry.coreCrmLabel : "CRM & Leads"}
+        description={activeIndustry ? activeIndustry.coreCrmSubtitle : "Track prospects, prioritize deals, and grow your sales pipeline."}
         action={
           <div className="flex items-center gap-2">
             {activeTab === "spreadsheet" && (
@@ -470,6 +473,17 @@ function CRMPage() {
           </div>
         }
       />
+
+      {activeIndustry && (
+        <IndustryNoticeBanner
+          title={`${activeIndustry.name} Active`}
+          message={activeIndustry.notices.coreCrmBanner}
+          actionText={`Go to ${activeIndustry.specialCrmName}`}
+          actionHref={`/dashboard/${activeIndustry.key}`}
+          storageKey={`crm_${activeIndustry.key}`}
+          colorTheme={activeIndustry.colorClass}
+        />
+      )}
 
       {/* Analytics KPI banner */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

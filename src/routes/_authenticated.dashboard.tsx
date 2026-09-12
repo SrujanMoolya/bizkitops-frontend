@@ -72,6 +72,7 @@ import { MODULES, ModuleKey } from "@/lib/modules";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { RoutePending, RouteError } from "@/components/dashboard/page-shell";
 import { getBusinessRolePermissions } from "@/lib/role-permissions";
+import { getActiveIndustryMeta } from "@/lib/industry-config";
 
 const installedModulesOptions = queryOptions({
   queryKey: ["installed-modules"],
@@ -178,6 +179,7 @@ function DashboardLayout() {
 
   const { data: installed } = useSuspenseQuery(installedModulesOptions);
   const activeModules = new Map(installed.map((m) => [m.module_key, m.is_active]));
+  const activeIndustry = getActiveIndustryMeta(activeModules);
 
   const { data: rolePermissions } = useSuspenseQuery(permissionsOptions(business.id));
   const allowedRoutes = rolePermissions[userRole] || [];
@@ -358,20 +360,29 @@ function DashboardLayout() {
                   const showSupportBadge = item.to === "/dashboard/support" && hasUnreadResponse;
                   const itemPinned = isPinned(item.to);
 
+                  let displayLabel = item.label;
+                  if (activeIndustry) {
+                    if (item.to === "/dashboard/inventory") {
+                      displayLabel = activeIndustry.coreInventoryLabel;
+                    } else if (item.to === "/dashboard/crm") {
+                      displayLabel = activeIndustry.coreCrmLabel;
+                    }
+                  }
+
                   return (
                     <SidebarMenuItem key={item.to} className="group/item relative">
-                      <SidebarMenuButton asChild tooltip={item.label}>
+                      <SidebarMenuButton asChild tooltip={displayLabel}>
                         <Link
                           to={item.to}
                           activeOptions={{ exact: !!item.exact }}
                           activeProps={{ "data-active": "true" } as never}
                           className="data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground flex items-center justify-between w-full pr-7"
                         >
-                          <span className="flex items-center gap-2">
-                            <item.icon className="h-4 w-4" />
-                            <span>{item.label}</span>
+                          <span className="flex items-center gap-2 min-w-0">
+                            <item.icon className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{displayLabel}</span>
                             {showSupportBadge && (
-                              <span className="relative flex h-2 w-2">
+                              <span className="relative flex h-2 w-2 shrink-0">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
                               </span>
