@@ -162,6 +162,15 @@ function sheetXml(header: string[], body: unknown[][]) {
 }
 
 function toXlsx(data: BusinessExport) {
+  // Excel sheet names: at most 31 characters, none of []:*?/\ and unique ignoring case
+  const used = new Set(["summary", "business"]);
+  const sheetName = (label: string) => {
+    const base = label.replace(/[[\]:*?/\\]/g, " ").slice(0, 31);
+    let name = base;
+    for (let i = 2; used.has(name.toLowerCase()); i++) name = `${base.slice(0, 30 - String(i).length)} ${i}`;
+    used.add(name.toLowerCase());
+    return name;
+  };
   const sheets: { name: string; xml: string }[] = [
     {
       name: "Summary",
@@ -184,7 +193,7 @@ function toXlsx(data: BusinessExport) {
     ...data.sections.map((s) => {
       const cols = columns(s.rows);
       return {
-        name: s.label.replace(/[[\]:*?/\\]/g, " ").slice(0, 31),
+        name: sheetName(s.label),
         xml: cols.length
           ? sheetXml(
               cols.map(headerText),

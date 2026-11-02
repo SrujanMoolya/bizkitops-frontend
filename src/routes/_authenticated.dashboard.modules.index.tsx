@@ -14,6 +14,8 @@ import { upgradeBusinessPlan } from "@/lib/payment.functions";
 import { triggerRazorpayPayment } from "@/lib/razorpay";
 import { toast } from "sonner";
 import { RoutePending, RouteError } from "@/components/dashboard/page-shell";
+import { INDUSTRY_MODULES } from "@/lib/industry-modules";
+import { INDUSTRY_ICONS } from "@/lib/industry-icons";
 import {
   Receipt,
   Wallet,
@@ -42,6 +44,7 @@ const ICONS: Record<string, LucideIcon> = {
   Shield,
   BarChart3,
   Car,
+  ...INDUSTRY_ICONS,
 };
 
 const modulesOptions = queryOptions({
@@ -63,6 +66,15 @@ function ModulesPage() {
   const plan = (bizData.business?.plan ?? "trial") as PlanKey;
   const { data: installed } = useSuspenseQuery(modulesOptions);
   const enabledSet = new Map(installed.map((m) => [m.module_key, m.is_active]));
+
+  // industry modules whose keywords match the business's category or name
+  const bizText = `${bizData.business?.category ?? ""} ${bizData.business?.name ?? ""}`.toLowerCase();
+  const recommended = new Set(
+    INDUSTRY_MODULES.filter((im) => im.keywords.some((k) => bizText.includes(k))).map((im) => im.key),
+  );
+  const specialModules = MODULES.filter((mod) => mod.isSpecial).sort(
+    (a, b) => Number(recommended.has(b.key)) - Number(recommended.has(a.key)),
+  );
 
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("yearly");
@@ -359,7 +371,7 @@ function ModulesPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {MODULES.filter((mod) => mod.isSpecial).map((mod) => {
+          {specialModules.map((mod) => {
             const Icon = ICONS[mod.icon] ?? Package;
             const allowed = canAccessModule(plan, mod.key, bizData.business?.trial_ends_at);
             const enabled = enabledSet.get(mod.key) ?? false;
@@ -373,6 +385,11 @@ function ModulesPage() {
                     <CardTitle className="text-base flex items-center gap-2">
                       {mod.name}
                       <span className="bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[9px] font-bold px-1.5 py-0.5 rounded">Special</span>
+                      {recommended.has(mod.key) && (
+                        <span className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[9px] font-bold px-1.5 py-0.5 rounded">
+                          Recommended
+                        </span>
+                      )}
                       {!allowed && <Lock className="h-3 w-3 text-muted-foreground shrink-0" />}
                     </CardTitle>
                     <CardDescription className="text-xs">{mod.category}</CardDescription>
@@ -393,6 +410,13 @@ function ModulesPage() {
                 </CardHeader>
                 <CardContent className="pb-4">
                   <p className="text-xs text-muted-foreground leading-normal">{mod.description}</p>
+                  {allowed && enabled && mod.path && (
+                    <Button asChild variant="link" size="sm" className="h-auto p-0 mt-3 text-primary text-xs font-semibold gap-0.5">
+                      <Link to={mod.path}>
+                        Open {mod.name} <ChevronRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </Button>
+                  )}
                   {!allowed && (
                     <div className="mt-3 flex items-center justify-between">
                       <Badge variant="outline" className="capitalize text-[10px]">

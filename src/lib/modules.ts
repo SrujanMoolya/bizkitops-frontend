@@ -1,4 +1,6 @@
 // Plan + module capability map. Mirrors public.subscription_plans seed.
+import { INDUSTRY_MODULES } from "./industry-modules";
+
 export type PlanKey = "trial" | "basic" | "pro" | "custom";
 export type ModuleKey =
   | "billing"
@@ -9,7 +11,20 @@ export type ModuleKey =
   | "website"
   | "staff"
   | "reports"
-  | "dealership";
+  | "dealership"
+  // industry modules - see industry-modules.ts
+  | "restaurant"
+  | "salon"
+  | "clinic"
+  | "gym"
+  | "education"
+  | "real_estate"
+  | "finance"
+  | "hotel"
+  | "pharmacy"
+  | "repair"
+  | "events"
+  | "logistics";
 
 export interface ModuleMeta {
   key: ModuleKey;
@@ -17,8 +32,12 @@ export interface ModuleMeta {
   description: string;
   minPlan: PlanKey;
   icon: string; // lucide icon name
-  category: "Finance" | "Operations" | "Sales" | "HR" | "Marketing";
+  category: "Finance" | "Operations" | "Sales" | "HR" | "Marketing" | "Industry";
   isSpecial?: boolean;
+  /** state when the business has never toggled it; industry modules start off */
+  defaultActive?: boolean;
+  /** dashboard page for the module */
+  path?: string;
 }
 
 export const MODULES: ModuleMeta[] = [
@@ -94,7 +113,21 @@ export const MODULES: ModuleMeta[] = [
     icon: "Car",
     category: "Operations",
     isSpecial: true,
+    path: "/dashboard/dealership",
   },
+  ...INDUSTRY_MODULES.map(
+    (m): ModuleMeta => ({
+      key: m.key as ModuleKey,
+      name: m.name,
+      description: m.description,
+      minPlan: "basic",
+      icon: m.icon,
+      category: "Industry",
+      isSpecial: true,
+      defaultActive: false,
+      path: `/dashboard/industry/${m.key}`,
+    }),
+  ),
 ];
 
 export const PLAN_RANK: Record<PlanKey, number> = {

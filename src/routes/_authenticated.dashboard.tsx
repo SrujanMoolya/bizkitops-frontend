@@ -73,6 +73,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { RoutePending, RouteError } from "@/components/dashboard/page-shell";
 import { getBusinessRolePermissions } from "@/lib/role-permissions";
 import { getActiveIndustryMeta } from "@/lib/industry-config";
+import { INDUSTRY_MODULES } from "@/lib/industry-modules";
+import { INDUSTRY_ICONS } from "@/lib/industry-icons";
 
 const installedModulesOptions = queryOptions({
   queryKey: ["installed-modules"],
@@ -116,6 +118,12 @@ const NAV = [
   { to: "/dashboard/reports", label: "Reports", icon: BarChart3 },
   { to: "/dashboard/website", label: "Website", icon: Globe },
   { to: "/dashboard/dealership", label: "Dealership", icon: Car, isSpecial: true },
+  ...INDUSTRY_MODULES.map((m) => ({
+    to: `/dashboard/industry/${m.key}`,
+    label: m.name,
+    icon: INDUSTRY_ICONS[m.icon] ?? Package,
+    isSpecial: true,
+  })),
   { to: "/dashboard/modules", label: "Module Store", icon: Store },
   { to: "/dashboard/billing", label: "Billing", icon: CreditCard },
   { to: "/dashboard/support", label: "Help & Support", icon: HelpCircle },
@@ -132,6 +140,9 @@ const MODULE_KEYS: Record<string, ModuleKey> = {
   "/dashboard/dealership": "dealership",
   "/dashboard/staff": "staff",
   "/dashboard/reports": "reports",
+  ...Object.fromEntries(
+    INDUSTRY_MODULES.map((m) => [`/dashboard/industry/${m.key}`, m.key as ModuleKey]),
+  ),
 };
 
 const ICONS: Record<string, LucideIcon> = {
@@ -276,7 +287,10 @@ function DashboardLayout() {
   });
 
   const coreNavItems = filteredNav.filter((item) => !item.isSpecial);
-  const specialNavItems = filteredNav.filter((item) => item.isSpecial);
+  // specialized modules only appear in the sidebar once switched on in the Module Store
+  const specialNavItems = filteredNav.filter(
+    (item) => item.isSpecial && activeModules.get(MODULE_KEYS[item.to]) === true,
+  );
   const pinnedNavItems = filteredNav.filter((item) => isPinned(item.to));
 
   return (

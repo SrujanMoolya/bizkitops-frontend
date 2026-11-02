@@ -1,10 +1,13 @@
 import { useQuery, queryOptions } from "@tanstack/react-query";
 import { listInstalledModules } from "@/lib/modules-store.functions";
+import { INDUSTRY_MODULES } from "@/lib/industry-modules";
 
-export type SpecializedIndustryKey = "dealership" | "restaurant" | "finance" | "real_estate";
+export type SpecializedIndustryKey = string;
 
 export interface SpecializedIndustryMeta {
   key: SpecializedIndustryKey;
+  /** dashboard page of the module */
+  path: string;
   name: string;
   badge: string;
   icon: string;
@@ -23,9 +26,10 @@ export interface SpecializedIndustryMeta {
   };
 }
 
-export const SPECIALIZED_INDUSTRIES: Record<SpecializedIndustryKey, SpecializedIndustryMeta> = {
+const HANDWRITTEN: Record<SpecializedIndustryKey, SpecializedIndustryMeta> = {
   dealership: {
     key: "dealership",
+    path: "/dashboard/dealership",
     name: "Automobile Dealership",
     badge: "Showroom Hub",
     icon: "Car",
@@ -45,6 +49,7 @@ export const SPECIALIZED_INDUSTRIES: Record<SpecializedIndustryKey, SpecializedI
   },
   restaurant: {
     key: "restaurant",
+    path: "/dashboard/industry/restaurant",
     name: "Restaurant & Cafe",
     badge: "Dining Hub",
     icon: "Utensils",
@@ -64,6 +69,7 @@ export const SPECIALIZED_INDUSTRIES: Record<SpecializedIndustryKey, SpecializedI
   },
   finance: {
     key: "finance",
+    path: "/dashboard/industry/finance",
     name: "Finance & Lending",
     badge: "Lending Hub",
     icon: "Landmark",
@@ -83,6 +89,7 @@ export const SPECIALIZED_INDUSTRIES: Record<SpecializedIndustryKey, SpecializedI
   },
   real_estate: {
     key: "real_estate",
+    path: "/dashboard/industry/real_estate",
     name: "Real Estate & Housing",
     badge: "Property Hub",
     icon: "Building2",
@@ -100,6 +107,39 @@ export const SPECIALIZED_INDUSTRIES: Record<SpecializedIndustryKey, SpecializedI
       specialCrmBanner: "Contractor networks and agency partners are managed in Core CRM.",
     },
   },
+};
+
+/** Hand-written copy where it exists; generic labels for every other industry module. */
+export const SPECIALIZED_INDUSTRIES: Record<SpecializedIndustryKey, SpecializedIndustryMeta> = {
+  ...Object.fromEntries(
+    INDUSTRY_MODULES.map((m): [string, SpecializedIndustryMeta] => {
+      const [first, second] = m.entities;
+      return [
+        m.key,
+        {
+          key: m.key,
+          path: `/dashboard/industry/${m.key}`,
+          name: m.name,
+          badge: `${m.name.split(" ")[0]} Hub`,
+          icon: m.icon,
+          colorClass: m.color,
+          coreInventoryLabel: "General Inventory",
+          coreInventorySubtitle: "Stock, supplies & consumables",
+          coreCrmLabel: "General CRM",
+          coreCrmSubtitle: "Leads, vendors & partners",
+          specialInventoryName: first.label,
+          specialCrmName: (second ?? first).label,
+          notices: {
+            coreInventoryBanner: `Managing ${first.label.toLowerCase()}? Use the ${m.name} module.`,
+            specialInventoryBanner: "Need to track general stock and supplies? Go to General Inventory.",
+            coreCrmBanner: `Managing ${(second ?? first).label.toLowerCase()}? Use the ${m.name} module.`,
+            specialCrmBanner: "General leads, vendors and partners are managed in Core CRM.",
+          },
+        },
+      ];
+    }),
+  ),
+  ...HANDWRITTEN,
 };
 
 export const installedModulesQueryOptions = queryOptions({

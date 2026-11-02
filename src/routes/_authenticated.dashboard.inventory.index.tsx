@@ -83,7 +83,7 @@ function InventoryPage() {
           title={`${activeIndustry.name} Active`}
           message={activeIndustry.notices.coreInventoryBanner}
           actionText={`Go to ${activeIndustry.specialInventoryName}`}
-          actionHref={`/dashboard/${activeIndustry.key}`}
+          actionHref={activeIndustry.path}
           storageKey={`inventory_${activeIndustry.key}`}
           colorTheme={activeIndustry.colorClass}
         />

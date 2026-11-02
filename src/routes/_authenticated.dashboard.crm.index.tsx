@@ -479,7 +479,7 @@ function CRMPage() {
           title={`${activeIndustry.name} Active`}
           message={activeIndustry.notices.coreCrmBanner}
           actionText={`Go to ${activeIndustry.specialCrmName}`}
-          actionHref={`/dashboard/${activeIndustry.key}`}
+          actionHref={activeIndustry.path}
           storageKey={`crm_${activeIndustry.key}`}
           colorTheme={activeIndustry.colorClass}
         />

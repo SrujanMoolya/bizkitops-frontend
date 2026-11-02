@@ -31,6 +31,7 @@ import { Route as AuthenticatedDashboardCrmIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedDashboardCustomersIndexRouteImport } from './routes/_authenticated.dashboard.customers.index'
 import { Route as AuthenticatedDashboardDealershipIndexRouteImport } from './routes/_authenticated.dashboard.dealership.index'
 import { Route as AuthenticatedDashboardExpensesIndexRouteImport } from './routes/_authenticated.dashboard.expenses.index'
+import { Route as AuthenticatedDashboardIndustryModuleKeyRouteImport } from './routes/_authenticated.dashboard.industry.$moduleKey'
 import { Route as AuthenticatedDashboardInventoryIndexRouteImport } from './routes/_authenticated.dashboard.inventory.index'
 import { Route as AuthenticatedDashboardInvoicesIndexRouteImport } from './routes/_authenticated.dashboard.invoices.index'
 import { Route as AuthenticatedDashboardInvoicesIdRouteImport } from './routes/_authenticated.dashboard.invoices.$id'
@@ -158,6 +159,12 @@ const AuthenticatedDashboardExpensesIndexRoute =
     path: '/expenses/',
     getParentRoute: () => AuthenticatedDashboardRoute,
   } as any)
+const AuthenticatedDashboardIndustryModuleKeyRoute =
+  AuthenticatedDashboardIndustryModuleKeyRouteImport.update({
+    id: '/industry/$moduleKey',
+    path: '/industry/$moduleKey',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardInventoryIndexRoute =
   AuthenticatedDashboardInventoryIndexRouteImport.update({
     id: '/inventory/',
@@ -229,6 +236,7 @@ export interface FileRoutesByFullPath {
   '/blog/': typeof BlogIndexRoute
   '/dashboard/permissions': typeof AuthenticatedDashboardPermissionsRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/dashboard/industry/$moduleKey': typeof AuthenticatedDashboardIndustryModuleKeyRoute
   '/dashboard/invoices/$id': typeof AuthenticatedDashboardInvoicesIdRoute
   '/dashboard/appointments/': typeof AuthenticatedDashboardAppointmentsIndexRoute
   '/dashboard/billing/': typeof AuthenticatedDashboardBillingIndexRoute
@@ -260,6 +268,7 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogIndexRoute
   '/dashboard/permissions': typeof AuthenticatedDashboardPermissionsRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
+  '/dashboard/industry/$moduleKey': typeof AuthenticatedDashboardIndustryModuleKeyRoute
   '/dashboard/invoices/$id': typeof AuthenticatedDashboardInvoicesIdRoute
   '/dashboard/appointments': typeof AuthenticatedDashboardAppointmentsIndexRoute
   '/dashboard/billing': typeof AuthenticatedDashboardBillingIndexRoute
@@ -294,6 +303,7 @@ export interface FileRoutesById {
   '/blog/': typeof BlogIndexRoute
   '/_authenticated/dashboard/permissions': typeof AuthenticatedDashboardPermissionsRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
+  '/_authenticated/dashboard/industry/$moduleKey': typeof AuthenticatedDashboardIndustryModuleKeyRoute
   '/_authenticated/dashboard/invoices/$id': typeof AuthenticatedDashboardInvoicesIdRoute
   '/_authenticated/dashboard/appointments/': typeof AuthenticatedDashboardAppointmentsIndexRoute
   '/_authenticated/dashboard/billing/': typeof AuthenticatedDashboardBillingIndexRoute
@@ -328,6 +338,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/dashboard/permissions'
     | '/dashboard/'
+    | '/dashboard/industry/$moduleKey'
     | '/dashboard/invoices/$id'
     | '/dashboard/appointments/'
     | '/dashboard/billing/'
@@ -359,6 +370,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/dashboard/permissions'
     | '/dashboard'
+    | '/dashboard/industry/$moduleKey'
     | '/dashboard/invoices/$id'
     | '/dashboard/appointments'
     | '/dashboard/billing'
@@ -392,6 +404,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/_authenticated/dashboard/permissions'
     | '/_authenticated/dashboard/'
+    | '/_authenticated/dashboard/industry/$moduleKey'
     | '/_authenticated/dashboard/invoices/$id'
     | '/_authenticated/dashboard/appointments/'
     | '/_authenticated/dashboard/billing/'
@@ -580,6 +593,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardExpensesIndexRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/dashboard/industry/$moduleKey': {
+      id: '/_authenticated/dashboard/industry/$moduleKey'
+      path: '/industry/$moduleKey'
+      fullPath: '/dashboard/industry/$moduleKey'
+      preLoaderRoute: typeof AuthenticatedDashboardIndustryModuleKeyRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/inventory/': {
       id: '/_authenticated/dashboard/inventory/'
       path: '/inventory'
@@ -649,6 +669,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardPermissionsRoute: typeof AuthenticatedDashboardPermissionsRoute
   AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
+  AuthenticatedDashboardIndustryModuleKeyRoute: typeof AuthenticatedDashboardIndustryModuleKeyRoute
   AuthenticatedDashboardInvoicesIdRoute: typeof AuthenticatedDashboardInvoicesIdRoute
   AuthenticatedDashboardAppointmentsIndexRoute: typeof AuthenticatedDashboardAppointmentsIndexRoute
   AuthenticatedDashboardBillingIndexRoute: typeof AuthenticatedDashboardBillingIndexRoute
@@ -671,6 +692,8 @@ const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
     AuthenticatedDashboardPermissionsRoute:
       AuthenticatedDashboardPermissionsRoute,
     AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
+    AuthenticatedDashboardIndustryModuleKeyRoute:
+      AuthenticatedDashboardIndustryModuleKeyRoute,
     AuthenticatedDashboardInvoicesIdRoute:
       AuthenticatedDashboardInvoicesIdRoute,
     AuthenticatedDashboardAppointmentsIndexRoute:

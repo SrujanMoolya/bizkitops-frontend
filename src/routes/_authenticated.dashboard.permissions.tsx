@@ -47,6 +47,8 @@ const PAGES = [
   { path: "/dashboard/appointments", label: "Appointments", desc: "Calendar view, booking forms, and service schedules" },
   { path: "/dashboard/staff", label: "Staff Manager", desc: "Inviting team members, deleting staff, and listing roles" },
   { path: "/dashboard/reports", label: "Reports & Analytics", desc: "Platform charts, profit margins, and financial records" },
+  { path: "/dashboard/dealership", label: "Dealership", desc: "Vehicle listings, buyer enquiries and dealership settings" },
+  { path: "/dashboard/industry", label: "Industry Modules", desc: "Restaurant, salon, clinic, gym and other industry-specific records" },
   { path: "/dashboard/storefront", label: "Storefront Web", desc: "Public ecommerce storefront configuration and settings" },
   { path: "/dashboard/modules", label: "Module Store", desc: "Turning system modules on or off" },
   { path: "/dashboard/billing", label: "Billing Ledger", desc: "Platform payments, subscriptions, invoices, and SLA tiers" },
