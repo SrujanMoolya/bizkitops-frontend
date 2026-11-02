@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { DatabaseBackup, FileArchive, FileJson, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { PageHeader } from "@/components/dashboard/page-shell";
 import { useBusiness, businessQueryOptions } from "@/hooks/use-business";
 import { updateBusinessSettings } from "@/lib/settings.functions";
+import { downloadBusinessData, type ExportFormat } from "@/lib/export-data";
 import { toast } from "sonner";
 import { RoutePending, RouteError } from "@/components/dashboard/page-shell";
 
@@ -142,7 +144,71 @@ function SettingsPage() {
           </Button>
         </div>
       </form>
+
+      {(data.role === "owner" || data.role === "admin") && <ExportCard />}
     </div>
+  );
+}
+
+const EXPORT_FORMATS: {
+  format: ExportFormat;
+  label: string;
+  hint: string;
+  icon: typeof FileText;
+}[] = [
+  { format: "xlsx", label: "Excel", hint: ".xlsx, one sheet per section", icon: FileSpreadsheet },
+  { format: "csv", label: "CSV", hint: ".zip of CSV files", icon: FileArchive },
+  { format: "pdf", label: "PDF", hint: "Print or save as PDF", icon: FileText },
+  { format: "json", label: "JSON", hint: "Full backup", icon: FileJson },
+];
+
+function ExportCard() {
+  const [busy, setBusy] = useState<ExportFormat | null>(null);
+
+  const run = async (format: ExportFormat) => {
+    setBusy(format);
+    try {
+      const n = await downloadBusinessData(format);
+      toast.success(format === "pdf" ? `Prepared ${n} records for PDF` : `Downloaded ${n} records`);
+    } catch (e) {
+      toast.error((e as Error).message || "Export failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <DatabaseBackup className="h-4 w-4" /> Download your data
+        </CardTitle>
+        <CardDescription>
+          Export everything in your business — profile, customers, invoices, expenses, inventory,
+          leads, appointments, staff and more.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {EXPORT_FORMATS.map(({ format, label, hint, icon: Icon }) => (
+          <Button
+            key={format}
+            type="button"
+            variant="outline"
+            className="h-auto flex-col gap-1 py-3"
+            disabled={busy !== null}
+            onClick={() => run(format)}
+          >
+            {busy === format ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Icon className="h-5 w-5" />
+            )}
+            <span className="font-medium">{label}</span>
+            <span className="text-xs text-muted-foreground font-normal">{hint}</span>
+          </Button>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 
