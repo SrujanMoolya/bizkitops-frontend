@@ -23,6 +23,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { formatINR, formatDate } from "@/lib/format";
+import { downloadElementAsPdf, printElement } from "@/lib/print-element";
 import { RoutePending, RouteError } from "@/components/dashboard/page-shell";
 import { useState, useRef, useEffect } from "react";
 import {
@@ -281,35 +282,27 @@ function InvoiceDetail() {
         return;
       }
 
-      // Load html2pdf from CDN dynamically to keep bundle size lightweight
-      if (!(window as any).html2pdf) {
-        const script = document.createElement("script");
-        script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
-        script.integrity = "sha512-GsLlZN/3F2ErC5IfS5QRLps5GYYWcTji3h66psQsOD968SiLwx58Gxlt+hkcIaGQG1ILChNqcdBieykM+Usipg==";
-        script.crossOrigin = "anonymous";
-        script.referrerPolicy = "no-referrer";
-        await new Promise((resolve, reject) => {
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-      }
-
-      const opt = {
-        margin: [0.3, 0.3, 0.3, 0.3],
-        filename: `Invoice_${inv.invoice_number || "Draft"}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2.2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
-      };
-
-      await (window as any).html2pdf().set(opt).from(element).save();
+      await downloadElementAsPdf(element, `Invoice_${inv.invoice_number || "Draft"}.pdf`);
       toast.success("PDF Downloaded!");
     } catch (e: any) {
       console.error(e);
-      toast.error("Failed to generate PDF: " + e.message);
+      toast.error("Failed to generate PDF: " + (e?.message || "please try again"));
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const printInvoice = async () => {
+    const element = document.getElementById("printable-invoice-card");
+    if (!element) {
+      toast.error("Invoice card element not found!");
+      return;
+    }
+    try {
+      await printElement(element, `Invoice ${inv.invoice_number ?? ""}`);
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Failed to print: " + (e?.message || "please try again"));
     }
   };
 
@@ -412,7 +405,7 @@ function InvoiceDetail() {
           </Link>
         </Button>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.print()}>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={printInvoice}>
             <Printer className="h-4 w-4" /> Print
           </Button>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={downloadPDF} disabled={downloading}>
